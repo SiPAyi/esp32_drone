@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone</title>
+<style>
+    body {
+    margin: 0px;
+}
+
+h1 {
+    text-align: center;
+    padding: 10px;
+    margin: 0px;
+}
+
+#connection_status{
+    color: blue;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    padding: 5px;   
+}
+
+#connection_status_div{
+    background-color: #dede4a;
+}
+
+h2 {
+    margin: 0px;
+    text-align: center;
+}
+
+h3{
+    margin-bottom: 0.5em;
+}
+
+#ip_address {
+    display: flex;
+    max-width: 900px;
+    margin: 0px auto;
+    align-items: center;
+    justify-content: center;
+}
+
+#ip_address>div {
+    display: flex;
+    align-items: center;
+}
+
+#change_ip {
+    padding: 5px 0px;
+    background: #6adf3bf2;
+    border-radius: 10px;
+    margin: 2px 10px;
+    display: flex;
+    align-items: center;
+    width: 100px;
+    justify-content: center;
+}
+
+#tabs{
+    display: flex;
+    justify-content: space-evenly;
+    margin: 2px auto;
+}
+
+
+#drone_info, #pid_inputs, #calibration, #joy{
+    display: none;
+    flex-direction: column;
+    max-width: 900px;
+    margin: 0px auto;
+    padding: 0px 10px;
+}
+
+
+#drone_info>h2{
+    width: 100%;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#drone_pose{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    margin: 10px 0px;
+}
+
+#drone_parameters>h3{
+    align-self: baseline;
+}
+
+
+#response, #offsets {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: 5px;
+    flex-direction: column;
+    align-content: flex-start;
+}
+
+#response div, #offsets div {
+    min-width: 108px;
+}
+
+#message_from_drone {
+    display: flex;
+    width: 100%;
+    margin-left: 20px;
+}
+
+#calib_list{
+    display: flex;
+    justify-content: space-around;
+}
+
+.calib{
+    align-content: center;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 100%;
+}
+
+.calib-step {
+    opacity: 0.5; /* Initially make the steps semi-transparent */
+    display: none; /* Hide all steps initially */
+    margin: 0px;
+}
+
+.prev_step{
+    opacity: 0.5;
+    display: block;
+}
+
+.active-step {
+    display: block; /* Show only the active step */
+    opacity: 1; /* Fully visible */
+}
+
+
+.pid_input {
+    width: 100%;
+}
+
+#min_values,
+#max_values {
+    display: flex;
+    gap: 10px;
+}
+
+.min_max {
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+
+}
+
+.min_max>input {
+    max-width: 60px;
+    border: none;
+}
+
+.min_max>.maxs {
+    text-align: end;
+}
+
+/* start of drone bomma division */
+    #drone_container{
+        width: 200px;
+        height: 317px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1px solid black;
+        border-radius: 5px;
+        padding: 5px;
+        justify-content: center;
+    }
+
+    #drone_display {
+        width: 100%;
+        aspect-ratio: 1/1;
+        perspective: 1000px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #drone {
+        position: relative;
+        width: 50px;
+        aspect-ratio: 1/1;
+        background: linear-gradient(to bottom, #007bff, #0056b3);
+        transform-style: preserve-3d;
+        transform-origin: center;
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+        transition: transform 0.1s ease-in-out;
+    }
+
+    /* Front indicator for the drone */
+    #front {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 20px;
+        background-color: red;
+        clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    }
+
+    /* Propellers of the drone */
+    .propeller {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: gray;
+        border-radius: 50%;
+        padding: 5px;
+    }
+
+    .propeller.top-left {
+        top: -50px;
+        left: -50px;
+    }
+
+    .propeller.top-right {
+        top: -50px;
+        right: -50px;
+    }
+
+    .propeller.bottom-left {
+        bottom: -50px;
+        left: -50px;
+    }
+
+    .propeller.bottom-right {
+        bottom: -50px;
+        right: -50px;
+    }
+
+    /* Arms connecting the body and the propellers */
+    .arm {
+        position: absolute;
+        width: 65px;
+        height: 10px;
+        background-color: black;
+    }
+    
+    .arm.selected {
+        background: #19dd23; /* Selected color */
+    }
+
+    .arm.top-left {
+        top: -25px;
+        left: -50px;
+        transform: rotate(45deg);
+        transform-origin: center;
+    }
+
+    .arm.top-right {
+        top: -25px;
+        right: -50px;
+        transform: rotate(-45deg);
+        transform-origin: center;
+    }
+
+    .arm.bottom-left {
+        bottom: -25px;
+        left: -50px;
+        transform: rotate(-45deg);
+        transform-origin: center;
+    }
+
+    .arm.bottom-right {
+        bottom: -25px;
+        right: -50px;
+        transform: rotate(45deg);
+        transform-origin: center;
+    }
+
+    .controls {
+        /* display: flex; */
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    #drone_container .slider-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    input[type="range"] {
+        width: 200px;
+    }
+/* end of drone bomma division */
+
+/* start of motor control division */
+
+.calib .slider-container {
+    margin: 20px auto;
+    width: 100%;
+    text-align: center;
+}
+
+.calib .slider-container label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.calib .slider-container input[type="range"] {
+    width: 100%;
+}
+
+.input-container {
+    margin: 5px auto;
+    text-align: center;
+}
+
+.input-container input[type="number"] {
+    width: 40px;
+    margin: 5px;
+}
+
+.motor_calib_div {
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+    justify-content: space-evenly;
+}
+
+@media screen and (max-width: 450px) {
+    div {
+        font-size: 12px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .motor_calib_div {
+        flex-direction: column;
+    }
+}
+
+/* end of motor control division */
+
+
+/* start of joystick division */
+    #joy{
+        height: 100vh;
+        display: flex;
+        justify-content: space-evenly;
+        align-content: stretch;
+        align-items: baseline;
+    }
+
+    #controller_block{    
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: center;
+        margin: 0px auto;
+}
+
+    .joy_sticks_block{
+        display: flex;
+        flex-direction: row;
+        width: min(900px, 100vw);
+        justify-content: space-around;
+        /* margin: 0px auto; */
+    }
+
+    .joystick-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 20px;
+        border: 2px solid #000;
+        border-radius: 50%;
+        background: #ddd;
+    }
+    .joystick-knob {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        background: #007bff;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        left: 50%;
+        top: 50%;
+    }
+    .joystick {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    /* .drone_state{
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+    } */
+    .output {
+        margin-top: 10px;
+        font-size: 16px;
+    }
+
+    @media screen and (max-width: 450px) {
+        #controller_block{
+            transform-style: preserve-3d;
+            transform-origin: center;
+            transform: rotateX(0deg) rotateY(0deg) rotateZ(90deg);
+            transition: transform 0.1s ease-in-out;
+        }
+    }
+/* end of joystick division */
+
+</style>
+</head>
+
+<body>
+    <div id="nav">
+        <div id="connection_status_div">
+            <span id="connection_status"> Not Connected</span>
+            <h1>Drone</h1>
+            <div id="ip_address">
+                    <span>IP address:<span contenteditable="true" id="ip_address_span"> </span></span>
+                    <span id="change_ip" onclick="console.log('changed ip'); changeIp();">change</span>
+            </div>
+        </div>
+
+            <div id="tabs">
+                <div id="drone_info_tab" style="color: red; font-weight: bold;" onclick="show_or_hide_block('drone_info'); ">Home</div>
+                <div id="calibration_tab" onclick="show_or_hide_block('calibration');">Calib</div>
+                <div id="pid_inputs_tab" onclick="show_or_hide_block('pid_inputs');">PID</div>
+                <div id="joy_tab" onclick="show_or_hide_block('joy');">Joy</div>
+            </div>
+    </div>
+
+
+    <div id="drone_info" style="display: flex;">
+        <h2>Drone Parameters:</h2>
+        <div id="drone_pose">
+            <div id="drone_parameters">
+                <div id="orientation">
+                    <h3>Orientation</h3>
+                    <div id="response">
+                        <div>Roll: <span id="roll">0</span></div>
+                        <div>Pitch: <span id="pitch">0</span></div>
+                        <div>Yaw: <span id="yaw">0</span></div>
+                        <div>PID Out: <span id="pid_out">0</span></div>
+                    </div>
+                </div>
+                <div class="offset_values">
+                    <h3>Offset values: <span id="offset_calibration"></span> </h3>
+                    <div id="offsets">
+                        <div>Roll: <span id="roll_offset">0</span></div>
+                        <div>Pitch: <span id="pitch_offset">0</span></div>
+                        <div>Yaw: <span id="yaw_offset">0</span></div>
+                        <div>acc_x: <span id="acc_x_offset">0</span></div>
+                        <div>acc_y: <span id="acc_y_offset">0</span></div>
+                        <div>acc_z: <span id="acc_z_offset">0</span></div>
+                    </div>
+                </div>
+            </div>
+    
+            <div id="drone_container">
+                <div id="drone_display" onclick="show_or_hide_controllers();">
+                    <div id="drone">
+                        <div id="front"></div>
+                        <!-- Arms -->
+                        <div class="arm top-left"></div>
+                        <div class="arm top-right"></div>
+                        <div class="arm bottom-left"></div>
+                        <div class="arm bottom-right"></div>
+                        <!-- Propellers -->
+                        <div class="propeller top-left">1</div>
+                        <div class="propeller top-right">2</div>
+                        <div class="propeller bottom-left">3</div>
+                        <div class="propeller bottom-right">4</div>
+                    </div>
+                </div>
+                <div class="controls" id="controllers_div">
+                    <h2 style="margin:0px; text-align: center;">offsets</h2>
+                    <div class="slider-container">
+                        <label for="roll-slider">Roll:</label>
+                        <input id="roll-slider" type="range" min="-180" max="180" value="0" step="1">
+                        <span id="roll-value">0°</span>
+                    </div>
+                    <div class="slider-container">
+                        <label for="pitch-slider">Pitch:</label>
+                        <input id="pitch-slider" type="range" min="-90" max="90" value="0" step="1">
+                        <span id="pitch-value">0°</span>
+                    </div>
+                    <div class="slider-container">
+                        <label for="yaw-slider">Yaw:</label>
+                        <input id="yaw-slider" type="range" min="0" max="360" value="0" step="1">
+                        <span id="yaw-value">0°</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="calibration">
+        <h2>Calibration</h2>
+        <div id="calib_list">
+            <h3 onclick="show_imu_calib(this);"  style="padding: 5px">IMU Calibration</h3>
+            <h3 onclick="show_motor_calib_div(this);"  style="padding: 5px">Motor Calibration</h3>
+        </div>
+    
+        <div class="calib" id="imu_calib" style="display: None;">
+            <p id="step1" class="calib-step active-step">Step 1: Place the drone on the flat surface.</p>
+            <p id="step2" class="calib-step">Step 2: Place the drone on the right side.</p>
+            <p id="step3" class="calib-step">Step 3: Place the drone on the left side.</p>
+            <p id="step4" class="calib-step">Step 4: Place the drone on the front side.</p>
+            <p id="step5" class="calib-step">Step 5: Place the drone on the back side.</p>
+        
+            <p id="imu_calib_status" style="font-weight: bold;"></p>
+        
+            <div style="display: flex; gap: 10px;">
+                <button id="nextButton" onclick="nextStep();" style="font-weight: bold;">Next</button>
+                <button id="resetButton" onclick="resetSteps();" style="font-weight: bold;">Reset</button>
+            </div>
+        </div>
+                
+
+        <div class="calib" id="motor_calib_div" style="display: none;">
+            <h4>Motor Calibration Block</h4>
+            <div class="motor_calib">
+                <div id="drone_container" style="margin: 5px 0px; min-width: 250px; height: auto;">
+                    <div id="drone_display">
+                        <div id="drone">
+                            <div id="front"></div>
+                            <!-- Arms -->
+                            <div class="arm top-left" data-arm="top-left"></div>
+                            <div class="arm top-right" data-arm="top-right"></div>
+                            <div class="arm bottom-left" data-arm="bottom-left"></div>
+                            <div class="arm bottom-right" data-arm="bottom-right"></div>
+                            <!-- Propellers -->
+                            <div class="propeller top-left" data-motor="1">1</div>
+                            <div class="propeller top-right" data-motor="2">2</div>
+                            <div class="propeller bottom-left" data-motor="3">3</div>
+                            <div class="propeller bottom-right" data-motor="4">4</div>
+                        </div>
+                    </div>
+        
+                    <!-- Modal for Selecting Propeller Number -->
+                    <div id="propellerModal"
+                        style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 2px solid #007bff; border-radius: 8px; padding: 20px; z-index: 1000;">
+                        <h3 style="width: 250px;">Assign Number to Propeller</h3>
+                        <div id="modalChoices">
+                            <!-- Choices will be dynamically inserted here -->
+                        </div>
+                        <button id="confirmChoice" style="margin-top: 10px;">Confirm</button>
+                        <button id="cancelChoice" style="margin-top: 10px;">Cancel</button>
+                    </div>
+                    <div id="overlay"
+                        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;">
+                    </div>
+        
+                    <div id="buttons_div">
+                        <button id="speed_control" onclick="change_speed_control_state(this);">start motor test</button>
+                        <button id="logSelection">Show selected arms</button>
+                    </div>
+        
+                    <div class="slider-container"
+                        onclick="reset_speed();"
+                        id="speed_controller_div" style="display: none;">
+                        <div class="value-display" id="speed-display">Speed: 100</div>
+                        <input id="speed-slider" type="range" min="0" max="100" value="0" step="1">
+                        
+                        <script>
+                            // some constants should be uploaded to or downloaded from drone memory 
+                            let rollMin = -45;
+                            let rollMax = 45;
+                            let pitchMin = -45;
+                            let pitchMax = 45;
+                            let yawMin = -45;
+                            let yawMax = 45;
+                            let speedMin = 1000;
+                            let speedMax = 2000;
+        
+                            // for slider to control the motors speed
+                            const speedSlider = document.getElementById('speed-slider');
+                            const speedDisplay = document.getElementById('speed-display');
+        
+                            window.onload = function () {
+                                speedSlider.min = speedMin;
+                                speedSlider.max = speedMax;
+                                speedSlider.value = speedMin;
+                                speedDisplay.textContent = `Speed: ${speedMin}`;
+                            };
+        
+                            function reset_speed(){
+                                speedSlider.value=speedMin; 
+                                speedDisplay.textContent = `Speed: ${speedMin}`
+                            }
+        
+                            // Event listener for slider input
+                            speedSlider.addEventListener('input', () => {
+                                sliderValue = parseInt(speedSlider.value)
+                                speedDisplay.textContent = `Speed: ${sliderValue}`;
+                            });
+        
+                        // // // for motor speed controlling code
+                            let speed_control_state = 0;
+                            function change_speed_control_state(this_element) {
+                                const speed_controller_block = document.getElementById('speed_controller_div');
+                                if (speed_control_state == 1) {
+                                    speed_controller_block.style.display = 'none';
+                                    speed_control_state = 0;
+                                    this_element.innerText = "start motor test";
+                                    reset_speed();
+                                }
+                                else if (confirm("Remove the props before doing it. Do you want to continue?")) {
+                                    speed_controller_block.style.display = 'flex';
+                                    speed_control_state = 1;
+                                    this_element.innerText = "stop motor test";
+                                } else {
+                                    // Optional: Do something else if the user clicks "No"
+                                    alert("Action canceled. Please remove the props first.");
+                                }
+                            }
+        
+                            document.getElementById('logSelection').addEventListener('click', () => {
+                                // Get motor numbers in order
+                                const motorsInOrder = Array.from(propellers).map(propeller =>
+                                    Number(propeller.textContent)
+                                );
+        
+                                // Get motor selection status
+                                const motorsSelectionStatus = Array.from(arms).map(arm => {
+                                    return selectedArms.has(arm.dataset.arm) ? 1 : 0;
+                                });
+        
+                                // Prepare the formatted string for the alert
+                                const positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+                                let statusMessage = '';
+        
+                                positions.forEach((position, index) => {
+                                    const statusText = motorsSelectionStatus[index] === 1 ? "selected" : "not selected";
+                                    statusMessage += `${position} \t ESC ${motorsInOrder[index]} \t ${statusText}\n`;
+                                });
+        
+        
+                                statusMessage += "NOTE: \n";
+                                statusMessage += "1. To select/unselect motor click on the corresponing arm(rectangle)\n";
+                                statusMessage += "2. to change the motor number click on the corresponing motor(circle)\n";
+                                // Log the results
+                                console.log(statusMessage);
+                                // Show the alert with the formatted message
+                                alert(statusMessage);
+        
+                            });
+                        </script>
+                    </div>
+        
+                    <script>
+                        const propellers = document.querySelectorAll(".propeller");
+                        const arms = document.querySelectorAll(".arm");
+                        const modal = document.getElementById("propellerModal");
+                        const overlay = document.getElementById("overlay");
+                        const modalChoices = document.getElementById("modalChoices");
+                        const confirmButton = document.getElementById("confirmChoice");
+                        const cancelButton = document.getElementById("cancelChoice");
+        
+                        let selectedPropeller = null;
+        
+                        // Show the modal with available choices
+                        propellers.forEach(propeller => {
+                            propeller.addEventListener("click", () => {
+                                selectedPropeller = propeller;
+                                const currentValue = Number(propeller.textContent);
+        
+                                // Clear old choices
+                                modalChoices.innerHTML = "";
+        
+                                // Generate choices dynamically
+                                for (let i = 1; i <= 4; i++) {
+                                    const choice = document.createElement("div");
+                                    choice.innerHTML = `
+                                        <label>
+                                            <input type="radio" name="propellerChoice" value="${i}" ${i === currentValue ? "checked" : ""}>
+                                            ${i}
+                                        </label>
+                                    `;
+                                    modalChoices.appendChild(choice);
+                                }
+        
+                                // Show modal
+                                modal.style.display = "block";
+                                overlay.style.display = "block";
+                            });
+                        });
+        
+                        // Confirm selection
+                        confirmButton.addEventListener("click", () => {
+                            const selectedValue = document.querySelector('input[name="propellerChoice"]:checked');
+                            if (selectedValue) {
+                                const currentValue = Number(selectedPropeller.textContent);
+                                const newValue = Number(selectedValue.value);
+        
+                                // Swap numbers if the new value is already assigned
+                                if (newValue !== currentValue) {
+                                    const otherPropeller = Array.from(propellers).find(
+                                        prop => Number(prop.textContent) === newValue
+                                    );
+        
+                                    if (otherPropeller) {
+                                        // Swap values
+                                        otherPropeller.textContent = currentValue;
+                                    }
+        
+                                    selectedPropeller.textContent = newValue;
+                                }
+        
+                                // Hide modal
+                                modal.style.display = "none";
+                                overlay.style.display = "none";
+                            } else {
+                                alert("Please select a value before confirming.");
+                            }
+                        });
+        
+                        // Cancel selection
+                        cancelButton.addEventListener("click", () => {
+                            // Reset modal state
+                            modal.style.display = "none";
+                            overlay.style.display = "none";
+                            modalChoices.innerHTML = ""; // Clear choices to prevent duplicate elements
+                        });
+        
+                        // Arms selection logic
+                        const selectedArms = new Set();
+        
+                        document.querySelectorAll('.arm').forEach(arm => {
+                            arm.addEventListener('click', () => {
+                                const armName = arm.dataset.arm;
+        
+                                if (selectedArms.has(armName)) {
+                                    // Deselect the arm
+                                    selectedArms.delete(armName);
+                                    arm.classList.remove('selected');
+                                } else {
+                                    // Select the arm
+                                    selectedArms.add(armName);
+                                    arm.classList.add('selected');
+                                }
+                            });
+                        });
+        
+        
+                        // Function to get selected arms (can be used anywhere)
+                        function getSelectedArms() {
+                            return Array.from(selectedArms);
+                        }
+                    </script>
+                </div>
+        
+        
+                <div class="constant_values" style="display: flex;flex-direction: column;">
+                    <h1>Some Constants</h1>
+                    <div class="input-container">
+                        <label for="roll-min">Roll Min:</label>
+                        <input id="roll-min" type="number" value="-45" step="1">
+                        <label for="roll-max">Roll Max:</label>
+                        <input id="roll-max" type="number" value="45" step="1">
+                    </div>
+        
+                    <div class="input-container">
+                        <label for="pitch-min">Pitch Min:</label>
+                        <input id="pitch-min" type="number" value="-45" step="1">
+                        <label for="pitch-max">Pitch Max:</label>
+                        <input id="pitch-max" type="number" value="45" step="1">
+                    </div>
+        
+                    <div class="input-container">
+                        <label for="yaw-min">Yaw Min:</label>
+                        <input id="yaw-min" type="number" value="-180" step="1">
+                        <label for="yaw-max">Yaw Max:</label>
+                        <input id="yaw-max" type="number" value="180" step="1">
+                    </div>
+        
+                    <div class="input-container">
+                        <label for="speed-min">Speed Min:</label>
+                        <input id="speed-min" type="number" value="-180" step="1">
+                        <label for="speed-max">Speed Max:</label>
+                        <input id="speed-max" type="number" value="180" step="1">
+                    </div>
+        
+                    <button>Save Constants</button>
+                    <script>
+                        // You can now access the min and max values for roll, pitch, and yaw directly
+                        const rollMinInput = document.getElementById('roll-min');
+                        const rollMaxInput = document.getElementById('roll-max');
+                        const pitchMinInput = document.getElementById('pitch-min');
+                        const pitchMaxInput = document.getElementById('pitch-max');
+                        const yawMinInput = document.getElementById('yaw-min');
+                        const yawMaxInput = document.getElementById('yaw-max');
+                        const speedMinInput = document.getElementById('speed-min');
+                        const speedMaxInput = document.getElementById('speed-max');
+        
+                        // setting the values from the drone or default some values
+                        function update_min_max_values() {
+                            rollMinInput.value = rollMin;
+                            rollMaxInput.value = rollMax;
+                            pitchMinInput.value = pitchMin;
+                            pitchMaxInput.value = pitchMax;
+                            yawMinInput.value = yawMin;
+                            yawMaxInput.value = yawMax;
+                            speedMinInput.value = speedMin;
+                            speedMaxInput.value = speedMax;
+        
+                            rollMinInput.innerText = rollMin;
+                            rollMaxInput.innerText = rollMax;
+                            pitchMinInput.innerText = pitchMin;
+                            pitchMaxInput.innerText = pitchMax;
+                            yawMinInput.innerText = yawMin;
+                            yawMaxInput.innerText = yawMax;
+                            speedMinInput.innerText = speedMin;
+                            speedMaxInput.innerText = speedMax;
+                        }
+        
+                        // Function to get the current roll, pitch, yaw min and max values
+                        function getControlValues() {
+                            rollMin = parseInt(rollMinInput.value, 10);
+                            rollMax = parseInt(rollMaxInput.value, 10);
+                            pitchMin = parseInt(pitchMinInput.value, 10);
+                            pitchMax = parseInt(pitchMaxInput.value, 10);
+                            yawMin = parseInt(yawMinInput.value, 10);
+                            yawMax = parseInt(yawMaxInput.value, 10);
+                            speedMin = parseInt(speedMinInput.value, 10);
+                            speedMax = parseInt(speedMaxInput.value, 10);
+        
+                            return { rollMin, rollMax, pitchMin, pitchMax, yawMin, yawMax, speedMin, speedMax };
+                        }
+                        update_min_max_values();
+                        // Example: Access the control values and log them
+                        console.log(getControlValues());
+                    </script>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <div id="pid_inputs">
+        <h2>PID Values:</h2>
+        
+        <div class="pid_input">
+            <h3>Roll PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="rpmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='rpValue'>P Value: </label><span id="rp_value_text">25</span></div>
+                <input type="number" id="rpmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='rpValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="rimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='riValue'>I Value: </label><span id="ri_value_text">0.5</span></div>
+                <input type="number" id="rimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0.5' step="0.000001" class='slider' id='riValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="rdmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='rdValue'>D Value: </label><span id="rd_value_text">25</span></div>
+                <input type="number" id="rdmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='rdValue'
+                onInput="send_pids();" style="width:100%;">
+        </div>
+
+        <div class="pid_input">
+            <h3>Pitch PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="ppmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ppValue'>P Value: </label><span id="pp_value_text">25</span></div>
+                <input type="number" id="ppmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='ppValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="pimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='piValue'>I Value: </label><span id="pi_value_text">0.5</span></div>
+                <input type="number" id="pimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0.5' step="0.000001" class='slider' id='piValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="pdmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='pdValue'>D Value: </label><span id="pd_value_text">25</span></div>
+                <input type="number" id="pdmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='pdValue'
+                onInput="send_pids();" style="width:100%;">
+        </div>
+
+        <div class="pid_input">
+            <h3>Yaw PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="ypmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ypValue'>P Value: </label><span id="yp_value_text">25</span></div>
+                <input type="number" id="ypmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='ypValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="yimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='yiValue'>I Value: </label><span id="yi_value_text">0.5</span></div>
+                <input type="number" id="yimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0.5' step="0.000001" class='slider' id='yiValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="ydmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ydValue'>D Value: </label><span id="yd_value_text">25</span></div>
+                <input type="number" id="ydmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='ydValue'
+                onInput="send_pids();" style="width:100%;">
+        </div>
+    </div>
+
+    <div id="joy">
+        <div id="controller_block">
+            <h2 style="text-align: center;">Drone Joystick Controller</h2>
+            
+            <div class="drone_state">
+                <div>Roll: <span id="roll_status">100</span></div>
+                <div>Pitch: <span id="pitch_status">100</span></div>
+                <div>Yaw: <span id="yaw_status">100</span></div>
+            </div>
+
+            <div class="joy_sticks_block">
+                <div class="joystick">
+                    <div class="joystick-container" id="joystick1">
+                        <div class="joystick-knob" id="knob1"></div>
+                    </div>
+                    <div class="output" id="output1">X: 0, Y: 0</div>
+                </div>
+                <div class="joystick">
+                    <div class="joystick-container" id="joystick2">
+                        <div class="joystick-knob" id="knob2"></div>
+                    </div>
+                    <div class="output" id="output2">X: 0, Y: 0</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="enterFullscreen">Enter Fullscreen</button>
+                <button id="exitFullscreen" style="display: none;">Exit Fullscreen</button>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    // //
+// // // websocket related things
+// //
+let ip_address = "192.168.73.42";
+    const ipDiv = document.getElementById("ip_address_span");
+    ipDiv.innerText = ip_address;
+
+    let ws, prev_status = 0;
+    const conn_status_div = document.getElementById("connection_status");
+    function connectWebSocket() {
+        ws = new WebSocket("ws://" + ip_address + "/");
+        console.log("connecting to the websocket with address ws://" + ip_address + "/" + " type of ip_address " + typeof (ip_address))
+
+        ws.onopen = function (event) {
+            console.log("Connected to WebSocket server");
+            conn_status_div.innerText = "Connected";
+            conn_status_div.style.color = "Green";
+            prev_status = 1;
+        };
+
+        ws.onmessage = function (event) {
+            console.log("Server response: " + event.data);
+
+            const roll_value_div = document.getElementById("roll");
+            const pitch_value_div = document.getElementById("pitch");
+            const yaw_value_div = document.getElementById("yaw");
+            const pid_out_value_div = document.getElementById("pid_out");
+
+            const responseData = event.data;
+            let roll, pitch, yaw, pid_out;
+            const values = responseData.split(',').map(value => parseFloat(value.trim()));
+            if (values.length === 4 && !isNaN(values[0]) && !isNaN(values[1]) && !isNaN(values[2]) && !isNaN(values[3])) {
+                roll = values[0];
+                pitch = values[1];
+                yaw = values[2];
+                pid_out = values[3];
+                // Use roll and pitch values here
+                console.log("Roll: " + roll);
+                console.log("Pitch: " + pitch);
+                console.log("Pitch: " + yaw);
+                console.log("PID Out: " + pid_out);
+                roll_value_div.innerText = roll;
+                pitch_value_div.innerText = pitch;
+                yaw_value_div.innerText = yaw;
+                pid_out_value_div.innerText = pid_out;
+
+                // Apply 3D transform to the drone block
+                drone.style.transform = `rotateX(${pitch+15}deg) rotateY(${yaw}deg) rotateZ(${roll}deg)`;
+            } else {
+                console.error("Invalid response data:", responseData);
+            }
+        };
+
+        ws.onerror = function (event) {
+            console.error("WebSocket error observed:", event);
+            // Attempt to reconnect after a short delay
+            setTimeout(connectWebSocket, 2000);
+            if (prev_status) {
+                conn_status_div.innerText = "disconnected";
+                conn_status_div.style.color = "red";
+            } else {
+                conn_status_div.innerText = "Not Connected";
+                conn_status_div.style.color = "blue";
+            }
+        };
+    }
+
+    function changeIp() {
+        ip_address = ipDiv.innerText;
+        alert("IP Address changed to" + ip_address);
+        ws.close();
+        connectWebSocket();
+    }
+
+    function send_pids() {
+        // roll values
+        const r_pValue = document.getElementById('rpValue').value;
+        const r_iValue = document.getElementById('riValue').value;
+        const r_dValue = document.getElementById('rdValue').value;
+
+        const r_p_value_text = document.getElementById('rp_value_text');
+        const r_i_value_text = document.getElementById('ri_value_text');
+        const r_d_value_text = document.getElementById('rd_value_text');
+        r_p_value_text.innerText = r_pValue;
+        r_i_value_text.innerText = r_iValue;
+        r_d_value_text.innerText = r_dValue;
+
+        // pitch values
+        const p_pValue = document.getElementById('ppValue').value;
+        const p_iValue = document.getElementById('piValue').value;
+        const p_dValue = document.getElementById('pdValue').value;
+
+        const p_p_value_text = document.getElementById('pp_value_text');
+        const p_i_value_text = document.getElementById('pi_value_text');
+        const p_d_value_text = document.getElementById('pd_value_text');
+        p_p_value_text.innerText = p_pValue;
+        p_i_value_text.innerText = p_iValue;
+        p_d_value_text.innerText = p_dValue;
+
+        // yaw values
+        const y_pValue = document.getElementById('ypValue').value;
+        const y_iValue = document.getElementById('yiValue').value;
+        const y_dValue = document.getElementById('ydValue').value;
+
+        const y_p_value_text = document.getElementById('yp_value_text');
+        const y_i_value_text = document.getElementById('yi_value_text');
+        const y_d_value_text = document.getElementById('yd_value_text');
+        y_p_value_text.innerText = y_pValue;
+        y_i_value_text.innerText = y_iValue;
+        y_d_value_text.innerText = y_dValue;
+
+
+
+        let mode = 1;
+        if (ws.readyState === WebSocket.OPEN) {
+
+            const message = r_pValue + "," + r_iValue + "," + r_dValue + "," + p_pValue + "," + p_iValue + "," + p_dValue + "," + y_pValue + "," + y_iValue + "," + y_dValue + "," + mode;
+            ws.send(message);
+            console.log("sent mesage: ", message);
+        } else {
+            console.error("WebSocket connection is not open.");
+            if (prev_status) {
+                conn_status_div.innerText = "disconnected";
+                conn_status_div.style.color = "red";
+            } else {
+                conn_status_div.innerText = "Not Connected";
+                conn_status_div.style.color = "blue";
+            }
+        }
+    }
+
+    // Connect WebSocket when the page loads
+    window.onload = function () {
+        const drone = document.getElementById('drone');
+        // Apply 3D transform to the drone block
+        // drone.style.transform = `rotateX(${30}deg) rotateY(${0}deg) rotateZ(${-30}deg)`;
+        drone.style.transform = `rotateX(${0}deg) rotateY(${0}deg) rotateZ(${0}deg)`;
+        connectWebSocket();
+    };
+
+// //
+// // // drone display things
+// //
+    const drone = document.getElementById('drone');
+    const rollSlider = document.getElementById('roll-slider');
+    const pitchSlider = document.getElementById('pitch-slider');
+    const yawSlider = document.getElementById('yaw-slider');
+    const rollValue = document.getElementById('roll-value');
+    const pitchValue = document.getElementById('pitch-value');
+    const yawValue = document.getElementById('yaw-value');
+
+    const controllers_div = document.getElementById('controllers_div');
+    let controllers = 0;
+
+    function show_or_hide_controllers() {
+        if (controllers === 0) {
+            controllers_div.style.display = 'none'; // Corrected: 'none' as a string
+            controllers = 1;
+        } else {
+            controllers_div.style.display = 'flex';
+            controllers = 0;
+        }
+    }
+
+
+    // Function to update the drone orientation
+    function updateDroneOrientation() {
+        const roll_slider = rollSlider.value;
+        const pitch_slider = pitchSlider.value;
+        const yaw_slider = yawSlider.value;
+
+        // Update the display values
+        rollValue.textContent = `${roll_slider}°`;
+        pitchValue.textContent = `${pitch_slider}°`;
+        yawValue.textContent = `${yaw_slider}°`;
+
+        // Apply 3D transform to the drone block
+        drone.style.transform = `rotateX(${pitch_slider}deg) rotateY(${yaw_slider}deg) rotateZ(${roll_slider}deg)`;
+    }
+
+    // Add event listeners to sliders
+    rollSlider.addEventListener('input', updateDroneOrientation);
+    pitchSlider.addEventListener('input', updateDroneOrientation);
+    yawSlider.addEventListener('input', updateDroneOrientation);
+
+    // Initialize the drone orientation
+    updateDroneOrientation();
+
+// // 
+// // // calibration things
+// // 
+    let currentStep = 1; // Track the current step
+
+    function nextStep() {
+        const statusDiv = document.getElementById("imu_calib_status");
+        const currentStepElement = document.getElementById(`step${currentStep}`);
+        const nextStepElement = document.getElementById(`step${currentStep + 1}`);
+
+        if (currentStepElement) {
+            // Hide the current step and make it semi-transparent
+            currentStepElement.classList.remove('active-step');
+            currentStepElement.classList.add('prev_step');
+        }
+
+        if (nextStepElement) {
+            // Show the next step
+            nextStepElement.classList.add('active-step');
+            currentStep++;
+        } else {
+            // If last step, show completion message
+            statusDiv.innerText = "Calibration completed!";
+        }
+    }
+
+    function resetSteps() {
+        currentStep = 1; // Reset to the first step
+
+        // Reset all steps to initial state
+        document.querySelectorAll('.calib-step').forEach((step) => {
+            step.classList.remove('active-step', 'prev_step');
+        });
+
+        // Show the first step
+        document.getElementById('step1').classList.add('active-step');
+        document.getElementById("imu_calib_status").innerText = ""; // Clear status message
+    }
+    // Initialize by showing the first step on page load
+    document.addEventListener('DOMContentLoaded', resetSteps);
+
+
+
+    const imu_calib_block = document.getElementById("imu_calib");
+    const motor_calib_div_block = document.getElementById("motor_calib_div");
+
+    function show_imu_calib(element) {
+        motor_calib_div_block.style.display = "none"; // Hide motor calibration block
+        imu_calib_block.style.display = "flex"; // Show IMU calibration block
+        resetBackgroundColors(); // Reset background colors of all h3
+        element.style.backgroundColor = "green"; // Highlight the selected one
+    }
+
+    function show_motor_calib_div(element) {
+        imu_calib_block.style.display = "none"; // Hide IMU calibration block
+        motor_calib_div_block.style.display = "flex"; // Show motor calibration block
+        resetBackgroundColors(); // Reset background colors of all h3
+        element.style.backgroundColor = "green"; // Highlight the selected one
+    }
+
+    function resetBackgroundColors() {
+        const h3Elements = document.querySelectorAll("#calib_list h3");
+        h3Elements.forEach((h3) => {
+            h3.style.backgroundColor = ""; // Reset background color
+        });
+    }
+// // 
+// // // pid related things
+// //
+    function changeMinMax() {
+        // roll value
+        const r_pvalueDiv = document.getElementById("rpValue");
+        const r_ivalueDiv = document.getElementById("riValue");
+        const r_dvalueDiv = document.getElementById("rdValue");
+
+        r_pvalueDiv.max = document.getElementById("rpmax").value;
+        r_pvalueDiv.min = document.getElementById("rpmin").value;
+        r_ivalueDiv.max = document.getElementById("rimax").value;
+        r_ivalueDiv.min = document.getElementById("rimin").value;
+        r_dvalueDiv.max = document.getElementById("rdmax").value;
+        r_dvalueDiv.min = document.getElementById("rdmin").value;
+
+        // pitch values
+        const p_pvalueDiv = document.getElementById("ppValue");
+        const p_ivalueDiv = document.getElementById("piValue");
+        const p_dvalueDiv = document.getElementById("pdValue");
+
+        p_pvalueDiv.min = document.getElementById("ppmin").value;
+        p_pvalueDiv.max = document.getElementById("ppmax").value;
+        p_ivalueDiv.max = document.getElementById("pimax").value;
+        p_ivalueDiv.min = document.getElementById("pimin").value;
+        p_dvalueDiv.max = document.getElementById("pdmax").value;
+        p_dvalueDiv.min = document.getElementById("pdmin").value;
+
+        // yaw values
+        const y_pvalueDiv = document.getElementById("ypValue");
+        const y_ivalueDiv = document.getElementById("yiValue");
+        const y_dvalueDiv = document.getElementById("ydValue");
+
+        y_pvalueDiv.max = document.getElementById("ypmax").value;
+        y_pvalueDiv.min = document.getElementById("ypmin").value;
+        y_ivalueDiv.max = document.getElementById("yimax").value;
+        y_ivalueDiv.min = document.getElementById("yimin").value;
+        y_dvalueDiv.max = document.getElementById("ydmax").value;
+        y_dvalueDiv.min = document.getElementById("ydmin").value;
+    }
+
+// // 
+// // // blocks hiding and unhiding things
+// //
+    function show_or_hide_block(div_id, present_tab) {
+        // Get all the divs in an array
+        const divs = ['drone_info', 'calibration', 'pid_inputs', 'joy'];
+
+        // Loop through each div and hide it
+        divs.forEach(id => {
+            const element = document.getElementById(id);
+            element.style.display = 'none';
+
+            const element_tab = document.getElementById(id+"_tab");
+            element_tab.style.fontWeight = 'normal';
+            element_tab.style.color = 'black';
+        });
+
+        // Display the clicked div
+        const selectedDiv = document.getElementById(div_id);
+        selectedDiv.style.display = 'flex';
+
+        const selectedDivTab = document.getElementById(div_id+"_tab");
+        selectedDivTab.style.fontWeight = 'bold';
+        selectedDivTab.style.color = 'red';
+
+    }
+
+
+// // 
+// // // joy controller things
+// //
+
+    function setupJoystick(containerId, knobId, outputId) {
+        const container = document.getElementById(containerId);
+        const knob = document.getElementById(knobId);
+        const output = document.getElementById(outputId);
+
+        const containerRadius = container.offsetWidth / 2;
+        const knobRadius = knob.offsetWidth / 2;
+        const maxDistance = containerRadius - knobRadius;
+
+        let isDragging = false;
+
+        container.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            moveKnob(e.clientX, e.clientY);
+        });
+
+        container.addEventListener("touchstart", (e) => {
+            isDragging = true;
+            const touch = e.touches[0];
+            moveKnob(touch.clientX, touch.clientY);
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (isDragging) moveKnob(e.clientX, e.clientY);
+        });
+
+        document.addEventListener("touchmove", (e) => {
+            if (isDragging) {
+                const touch = e.touches[0];
+                moveKnob(touch.clientX, touch.clientY);
+            }
+        });
+
+        document.addEventListener("mouseup", () => {
+            if (isDragging) resetKnob();
+            isDragging = false;
+        });
+
+        document.addEventListener("touchend", () => {
+            if (isDragging) resetKnob();
+            isDragging = false;
+        });
+
+        function moveKnob(clientX, clientY) {
+            const rect = container.getBoundingClientRect();
+            const centerX = rect.left + containerRadius;
+            const centerY = rect.top + containerRadius;
+
+            let dx = clientX - centerX;
+            let dy = clientY - centerY;
+
+            const isRotated = window.matchMedia("(max-width: 450px)").matches;
+
+            if (isRotated) {
+                [dx, dy] = [dy, -dx];
+            }
+
+            const distance = Math.min(Math.sqrt(dx * dx + dy * dy), maxDistance);
+
+            if (distance > 0) {
+                const angle = Math.atan2(dy, dx);
+                dx = Math.cos(angle) * distance;
+                dy = Math.sin(angle) * distance;
+            }
+
+            knob.style.left = `${containerRadius + dx}px`;
+            knob.style.top = `${containerRadius + dy}px`;
+
+            const normalizedX = Math.round((dx / maxDistance) * 100);
+            const normalizedY = Math.round((-dy / maxDistance) * 100);
+
+            output.textContent = `X: ${normalizedX}, Y: ${normalizedY}`;
+        }
+
+        function resetKnob() {
+            knob.style.left = `${containerRadius}px`;
+            knob.style.top = `${containerRadius}px`;
+            output.textContent = `X: 0, Y: 0`;
+        }
+    }
+
+    // Setup fullscreen functionality
+    const joyBlock = document.getElementById("joy");
+    const enterFullscreenBtn = document.getElementById("enterFullscreen");
+    const exitFullscreenBtn = document.getElementById("exitFullscreen");
+
+
+    enterFullscreenBtn.addEventListener("click", () => {
+        if (joyBlock.requestFullscreen) {
+            joyBlock.requestFullscreen();
+        } else if (joyBlock.webkitRequestFullscreen) { // Safari
+            joyBlock.webkitRequestFullscreen();
+        } else if (joyBlock.msRequestFullscreen) { // IE/Edge
+            joyBlock.msRequestFullscreen();
+        }
+        joyBlock.style.color = "white";
+        enterFullscreenBtn.style.display = "none";
+        exitFullscreenBtn.style.display = "inline-block";
+    });
+
+    exitFullscreenBtn.addEventListener("click", () => {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { // Safari
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { // IE/Edge
+            document.msExitFullscreen();
+        }
+        joyBlock.style.color = "black";
+        enterFullscreenBtn.style.display = "inline-block";
+        exitFullscreenBtn.style.display = "none";
+    });
+
+    setupJoystick("joystick1", "knob1", "output1");
+    setupJoystick("joystick2", "knob2", "output2");
+
+</script>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone Orientation with Arms</title>
+    <link rel="stylesheet" href="drone.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* justify-content: center; */
+            height: 300vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #drone_container{
+    width: 200px;
+    height: 317px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 5px;
+    justify-content: center;
+}
+
+#drone_display {
+    width: 100%;
+    aspect-ratio: 1/1;
+    perspective: 1000px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#drone {
+    position: relative;
+    width: 50px;
+    aspect-ratio: 1/1;
+    background: linear-gradient(to bottom, #007bff, #0056b3);
+    transform-style: preserve-3d;
+    transform-origin: center;
+    transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    transition: transform 0.1s ease-in-out;
+}
+
+/* Front indicator for the drone */
+#front {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+/* Propellers of the drone */
+.propeller {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: gray;
+    border-radius: 50%;
+    padding: 5px;
+}
+
+.propeller.top-left {
+    top: -50px;
+    left: -50px;
+}
+
+.propeller.top-right {
+    top: -50px;
+    right: -50px;
+}
+
+.propeller.bottom-left {
+    bottom: -50px;
+    left: -50px;
+}
+
+.propeller.bottom-right {
+    bottom: -50px;
+    right: -50px;
+}
+
+/* Arms connecting the body and the propellers */
+.arm {
+    position: absolute;
+    width: 65px;
+    height: 10px;
+    background-color: black;
+}
+
+.arm.top-left {
+    top: -25px;
+    left: -50px;
+    transform: rotate(45deg);
+    transform-origin: center;
+}
+
+.arm.top-right {
+    top: -25px;
+    right: -50px;
+    transform: rotate(-45deg);
+    transform-origin: center;
+}
+
+.arm.bottom-left {
+    bottom: -25px;
+    left: -50px;
+    transform: rotate(-45deg);
+    transform-origin: center;
+}
+
+.arm.bottom-right {
+    bottom: -25px;
+    right: -50px;
+    transform: rotate(45deg);
+    transform-origin: center;
+}
+
+.controls {
+    /* display: flex; */
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+input[type="range"] {
+    width: 200px;
+}
+
+/* span {
+    font-size: 14px;
+    width: 60px;
+    text-align: right;
+} */
+
+
+    </style>
+</head>
+<body>
+    <div id="drone_container">
+        <div id="display" onclick="show_or_hide_controllers();">
+            <div id="drone">
+                <div id="front"></div>
+                <!-- Arms -->
+                <div class="arm top-left"></div>
+                <div class="arm top-right"></div>
+                <div class="arm bottom-left"></div>
+                <div class="arm bottom-right"></div>
+                <!-- Propellers -->
+                <div class="propeller top-left">1</div>
+                <div class="propeller top-right">2</div>
+                <div class="propeller bottom-left">3</div>
+                <div class="propeller bottom-right">4</div>
+            </div>
+        </div>
+        <div class="controls" id="controllers_div">
+            <h2 style="margin:0px; text-align: center;">offsets</h2>
+            <div class="slider-container">
+                <label for="roll-slider">Roll:</label>
+                <input id="roll-slider" type="range" min="-180" max="180" value="0" step="1">
+                <span id="roll-value">0°</span>
+            </div>
+            <div class="slider-container">
+                <label for="pitch-slider">Pitch:</label>
+                <input id="pitch-slider" type="range" min="-90" max="90" value="0" step="1">
+                <span id="pitch-value">0°</span>
+            </div>
+            <div class="slider-container">
+                <label for="yaw-slider">Yaw:</label>
+                <input id="yaw-slider" type="range" min="0" max="360" value="0" step="1">
+                <span id="yaw-value">0°</span>
+            </div>
+        </div>
+        <script>
+            const drone = document.getElementById('drone');
+            const rollSlider = document.getElementById('roll-slider');
+            const pitchSlider = document.getElementById('pitch-slider');
+            const yawSlider = document.getElementById('yaw-slider');
+            const rollValue = document.getElementById('roll-value');
+            const pitchValue = document.getElementById('pitch-value');
+            const yawValue = document.getElementById('yaw-value');
+
+            const controllers_div = document.getElementById('controllers_div');
+            let controllers = 0;
+
+            function show_or_hide_controllers() {
+                if (controllers === 0) {
+                    controllers_div.style.display = 'none'; // Corrected: 'none' as a string
+                    controllers = 1;
+                } else {
+                    controllers_div.style.display = 'flex';
+                    controllers = 0;
+                }
+            }
+
+
+            // Function to update the drone orientation
+            function updateDroneOrientation() {
+                const roll = rollSlider.value;
+                const pitch = pitchSlider.value;
+                const yaw = yawSlider.value;
+
+                // Update the display values
+                rollValue.textContent = `${roll}°`;
+                pitchValue.textContent = `${pitch}°`;
+                yawValue.textContent = `${yaw}°`;
+
+                // Apply 3D transform to the drone block
+                drone.style.transform = `rotateX(${pitch}deg) rotateY(${yaw}deg) rotateZ(${roll}deg)`;
+            }
+
+            // Add event listeners to sliders
+            rollSlider.addEventListener('input', updateDroneOrientation);
+            pitchSlider.addEventListener('input', updateDroneOrientation);
+            yawSlider.addEventListener('input', updateDroneOrientation);
+
+            // Initialize the drone orientation
+            updateDroneOrientation();
+        </script>
+    </div>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadcopter Motor Control</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <div class="motor_calib">
+        <div id="drone_container" style="margin: 5px 0px; min-width: 250px; height: auto;">
+            <div id="drone_display">
+                <div id="drone">
+                    <div id="front"></div>
+                    <!-- Arms -->
+                    <div class="arm top-left" data-arm="top-left"></div>
+                    <div class="arm top-right" data-arm="top-right"></div>
+                    <div class="arm bottom-left" data-arm="bottom-left"></div>
+                    <div class="arm bottom-right" data-arm="bottom-right"></div>
+                    <!-- Propellers -->
+                    <div class="propeller top-left" data-motor="1">1</div>
+                    <div class="propeller top-right" data-motor="2">2</div>
+                    <div class="propeller bottom-left" data-motor="3">3</div>
+                    <div class="propeller bottom-right" data-motor="4">4</div>
+                </div>
+            </div>
+
+            <!-- Modal for Selecting Propeller Number -->
+            <div id="propellerModal"
+                style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 2px solid #007bff; border-radius: 8px; padding: 20px; z-index: 1000;">
+                <h3 style="width: 250px;">Assign Number to Propeller</h3>
+                <div id="modalChoices">
+                    <!-- Choices will be dynamically inserted here -->
+                </div>
+                <button id="confirmChoice" style="margin-top: 10px;">Confirm</button>
+                <button id="cancelChoice" style="margin-top: 10px;">Cancel</button>
+            </div>
+            <div id="overlay"
+                style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;">
+            </div>
+
+            <div id="buttons_div">
+                <button id="speed_control" onclick="change_speed_control_state(this);">start motor test</button>
+                <button id="logSelection">Show selected arms</button>
+            </div>
+
+            <div class="slider-container"
+                onclick="reset_speed();"
+                id="speed_controller_div" style="display: none;">
+                <div class="value-display" id="speed-display">Speed: 100</div>
+                <input id="speed-slider" type="range" min="0" max="100" value="0" step="1">
+                
+                <script>
+                    // some constants should be uploaded to or downloaded from drone memory 
+                    let rollMin = -45;
+                    let rollMax = 45;
+                    let pitchMin = -45;
+                    let pitchMax = 45;
+                    let yawMin = -45;
+                    let yawMax = 45;
+                    let speedMin = 1000;
+                    let speedMax = 2000;
+
+                    // for slider to control the motors speed
+                    const speedSlider = document.getElementById('speed-slider');
+                    const speedDisplay = document.getElementById('speed-display');
+
+                    window.onload = function () {
+                        speedSlider.min = speedMin;
+                        speedSlider.max = speedMax;
+                        speedSlider.value = speedMin;
+                        speedDisplay.textContent = `Speed: ${speedMin}`;
+                    };
+
+                    function reset_speed(){
+                        speedSlider.value=speedMin; 
+                        speedDisplay.textContent = `Speed: ${speedMin}`;
+                        // need send a min_speed commands to the drone
+                    }
+
+                    // Event listener for slider input
+                    speedSlider.addEventListener('input', () => {
+                        sliderValue = parseInt(speedSlider.value)
+                        speedDisplay.textContent = `Speed: ${sliderValue}`;
+                    });
+
+                // // // for motor speed controlling code
+                    let speed_control_state = 0;
+                    function change_speed_control_state(this_element) {
+                        const speed_controller_block = document.getElementById('speed_controller_div');
+                        if (speed_control_state == 1) {
+                            speed_controller_block.style.display = 'none';
+                            speed_control_state = 0;
+                            this_element.innerText = "start motor test";
+                            reset_speed();
+                        }
+                        else if (confirm("Remove the props before doing it. Do you want to continue?")) {
+                            speed_controller_block.style.display = 'flex';
+                            speed_control_state = 1;
+                            this_element.innerText = "stop motor test";
+                        } else {
+                            // Optional: Do something else if the user clicks "No"
+                            alert("Action canceled. Please remove the props first.");
+                        }
+                    }
+
+                    document.getElementById('logSelection').addEventListener('click', () => {
+                        // Get motor numbers in order
+                        const motorsInOrder = Array.from(propellers).map(propeller =>
+                            Number(propeller.textContent)
+                        );
+
+                        // Get motor selection status
+                        const motorsSelectionStatus = Array.from(arms).map(arm => {
+                            return selectedArms.has(arm.dataset.arm) ? 1 : 0;
+                        });
+
+                        // Prepare the formatted string for the alert
+                        const positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+                        let statusMessage = '';
+
+                        positions.forEach((position, index) => {
+                            const statusText = motorsSelectionStatus[index] === 1 ? "selected" : "not selected";
+                            statusMessage += `${position} \t ESC ${motorsInOrder[index]} \t ${statusText}\n`;
+                        });
+
+
+                        statusMessage += "NOTE: \n";
+                        statusMessage += "1. To select/unselect motor click on the corresponing arm(rectangle)\n";
+                        statusMessage += "2. to change the motor number click on the corresponing motor(circle)\n";
+                        // Log the results
+                        console.log(statusMessage);
+                        // Show the alert with the formatted message
+                        alert(statusMessage);
+
+                    });
+                </script>
+            </div>
+
+            <script>
+                const propellers = document.querySelectorAll(".propeller");
+                const arms = document.querySelectorAll(".arm");
+                const modal = document.getElementById("propellerModal");
+                const overlay = document.getElementById("overlay");
+                const modalChoices = document.getElementById("modalChoices");
+                const confirmButton = document.getElementById("confirmChoice");
+                const cancelButton = document.getElementById("cancelChoice");
+
+                let selectedPropeller = null;
+
+                // Show the modal with available choices
+                propellers.forEach(propeller => {
+                    propeller.addEventListener("click", () => {
+                        selectedPropeller = propeller;
+                        const currentValue = Number(propeller.textContent);
+
+                        // Clear old choices
+                        modalChoices.innerHTML = "";
+
+                        // Generate choices dynamically
+                        for (let i = 1; i <= 4; i++) {
+                            const choice = document.createElement("div");
+                            choice.innerHTML = `
+                                <label>
+                                    <input type="radio" name="propellerChoice" value="${i}" ${i === currentValue ? "checked" : ""}>
+                                    ${i}
+                                </label>
+                            `;
+                            modalChoices.appendChild(choice);
+                        }
+
+                        // Show modal
+                        modal.style.display = "block";
+                        overlay.style.display = "block";
+                    });
+                });
+
+                // Confirm selection
+                confirmButton.addEventListener("click", () => {
+                    const selectedValue = document.querySelector('input[name="propellerChoice"]:checked');
+                    if (selectedValue) {
+                        const currentValue = Number(selectedPropeller.textContent);
+                        const newValue = Number(selectedValue.value);
+
+                        // Swap numbers if the new value is already assigned
+                        if (newValue !== currentValue) {
+                            const otherPropeller = Array.from(propellers).find(
+                                prop => Number(prop.textContent) === newValue
+                            );
+
+                            if (otherPropeller) {
+                                // Swap values
+                                otherPropeller.textContent = currentValue;
+                            }
+
+                            selectedPropeller.textContent = newValue;
+                        }
+
+                        // Hide modal
+                        modal.style.display = "none";
+                        overlay.style.display = "none";
+                    } else {
+                        alert("Please select a value before confirming.");
+                    }
+                });
+
+                // Cancel selection
+                cancelButton.addEventListener("click", () => {
+                    // Reset modal state
+                    modal.style.display = "none";
+                    overlay.style.display = "none";
+                    modalChoices.innerHTML = ""; // Clear choices to prevent duplicate elements
+                });
+
+                // Arms selection logic
+                const selectedArms = new Set();
+
+                document.querySelectorAll('.arm').forEach(arm => {
+                    arm.addEventListener('click', () => {
+                        const armName = arm.dataset.arm;
+
+                        if (selectedArms.has(armName)) {
+                            // Deselect the arm
+                            selectedArms.delete(armName);
+                            arm.classList.remove('selected');
+                        } else {
+                            // Select the arm
+                            selectedArms.add(armName);
+                            arm.classList.add('selected');
+                        }
+                    });
+                });
+
+
+                // Function to get selected arms (can be used anywhere)
+                function getSelectedArms() {
+                    return Array.from(selectedArms);
+                }
+            </script>
+        </div>
+
+
+        <div class="constant_values" style="display: flex;flex-direction: column;">
+            <h1>Some Constants</h1>
+            <div class="input-container">
+                <label for="roll-min">Roll Min:</label>
+                <input id="roll-min" type="number" value="-45" step="1">
+                <label for="roll-max">Roll Max:</label>
+                <input id="roll-max" type="number" value="45" step="1">
+            </div>
+
+            <div class="input-container">
+                <label for="pitch-min">Pitch Min:</label>
+                <input id="pitch-min" type="number" value="-45" step="1">
+                <label for="pitch-max">Pitch Max:</label>
+                <input id="pitch-max" type="number" value="45" step="1">
+            </div>
+
+            <div class="input-container">
+                <label for="yaw-min">Yaw Min:</label>
+                <input id="yaw-min" type="number" value="-180" step="1">
+                <label for="yaw-max">Yaw Max:</label>
+                <input id="yaw-max" type="number" value="180" step="1">
+            </div>
+
+            <div class="input-container">
+                <label for="speed-min">Speed Min:</label>
+                <input id="speed-min" type="number" value="-180" step="1">
+                <label for="speed-max">Speed Max:</label>
+                <input id="speed-max" type="number" value="180" step="1">
+            </div>
+
+            <button>Save Constants</button>
+            <script>
+                // You can now access the min and max values for roll, pitch, and yaw directly
+                const rollMinInput = document.getElementById('roll-min');
+                const rollMaxInput = document.getElementById('roll-max');
+                const pitchMinInput = document.getElementById('pitch-min');
+                const pitchMaxInput = document.getElementById('pitch-max');
+                const yawMinInput = document.getElementById('yaw-min');
+                const yawMaxInput = document.getElementById('yaw-max');
+                const speedMinInput = document.getElementById('speed-min');
+                const speedMaxInput = document.getElementById('speed-max');
+
+                // setting the values from the drone or default some values
+                function update_min_max_values() {
+                    rollMinInput.value = rollMin;
+                    rollMaxInput.value = rollMax;
+                    pitchMinInput.value = pitchMin;
+                    pitchMaxInput.value = pitchMax;
+                    yawMinInput.value = yawMin;
+                    yawMaxInput.value = yawMax;
+                    speedMinInput.value = speedMin;
+                    speedMaxInput.value = speedMax;
+
+                    rollMinInput.innerText = rollMin;
+                    rollMaxInput.innerText = rollMax;
+                    pitchMinInput.innerText = pitchMin;
+                    pitchMaxInput.innerText = pitchMax;
+                    yawMinInput.innerText = yawMin;
+                    yawMaxInput.innerText = yawMax;
+                    speedMinInput.innerText = speedMin;
+                    speedMaxInput.innerText = speedMax;
+                }
+
+                // Function to get the current roll, pitch, yaw min and max values
+                function getControlValues() {
+                    rollMin = parseInt(rollMinInput.value, 10);
+                    rollMax = parseInt(rollMaxInput.value, 10);
+                    pitchMin = parseInt(pitchMinInput.value, 10);
+                    pitchMax = parseInt(pitchMaxInput.value, 10);
+                    yawMin = parseInt(yawMinInput.value, 10);
+                    yawMax = parseInt(yawMaxInput.value, 10);
+                    speedMin = parseInt(speedMinInput.value, 10);
+                    speedMax = parseInt(speedMaxInput.value, 10);
+
+                    return { rollMin, rollMax, pitchMin, pitchMax, yawMin, yawMax, speedMin, speedMax };
+                }
+                update_min_max_values();
+                // Example: Access the control values and log them
+                console.log(getControlValues());
+            </script>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP32 MPU6050 Control</title>
+  <script>
+// ======================== global variables =============================
+    // orientation constants (roll, pitch, yaw) in degrees, altitude in m;
+    let roll = 0, pitch = 0, yaw= 0, altitude = 0;
+
+    // some settings
+    let rollMax = 45;
+    let pitchMax = 45;
+    let yawMax = 45;
+    let speedMin = 1000;
+    let speedMax = 2000;
+    
+    let drone_mode = 0;
+    let motorsInOrder = [1, 2, 3, 4];
+    let motorsSelectionStatus = [0, 0, 0, 0];
+    let motors_speed = 1000;
+
+    let setpoints = [0, 0, 0, 0];
+
+// ================================ websocket related ===========================
+    let socket;
+    let reconnectInterval = 2000; // Reconnect every 2 seconds if disconnected
+
+    function connectWebSocket() {
+      socket = new WebSocket('ws://192.168.114.88:81');
+
+      socket.onopen = function () {
+        console.log('WebSocket connected');
+        document.getElementById("connection_status").innerText = "connected";
+        
+        // getPIDValues();
+        // getMode();
+        // get_motors_order();
+        // get_settings();
+      };
+      
+      socket.onmessage = function (event) {
+        // console.log(event.data);
+        
+        handleMsg(event.data);
+        document.getElementById("connection_status").innerText = "got message";
+      };
+      
+      socket.onclose = function () {
+        document.getElementById("connection_status").innerText = "disconnected";
+
+        console.log('WebSocket disconnected, attempting to reconnect...');
+        setTimeout(connectWebSocket, reconnectInterval);
+      };
+
+      socket.onerror = function (error) {
+        console.error('WebSocket error:', error);
+        socket.close();
+      };
+    }
+    
+    function send_data(msg){
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(msg);
+            console.log("sent mesage: ", msg);
+        } else {
+            console.error("WebSocket connection is not open.");
+            if (prev_status) {
+                document.getElementById("connection_status").innerText = "disconnected";
+                document.getElementById("connection_status").style.color = "red";
+            } else {
+              document.getElementById("connection_status").innerText = "Not Connected";
+              document.getElementById("connection_status").style.color = "blue";
+            }
+        }
+    }
+
+    function handleMsg(msg){
+      try {
+        const data = JSON.parse(msg);
+        const messageId = data.id;
+        // Handle message based on message_id
+        switch (messageId) {
+            case -1: // -1(drone<-GCS): get_mode
+              alert("-1(drone<-GCS): get_mode \n this step is only on drone side (drone<-GCS)");
+              break;
+              
+            case 0: // 0(drone<>GCS): set_modes(0->STABLE, 1->GUIDED, 2->AUTO, 3->CALIB, 4-> MOTOR_TEST, 5->LAND)
+              drone_mode = data.mode;
+              
+              document.getElementById("droneMode").innerText = 'drone mode : ' + drone_mode;
+              break;
+
+            case 1: // 1(drone<>GCS): get_PIDs
+              console.log("Gor request for PID values");
+              console.log("sending PID values");
+              sendPIDValues();
+
+            case 2: // 2(drone<>GCS): set_PIDs{save, proll, iroll, droll, ppitch, ipitch, dpitch, pyaw, iyaw, dyaw}
+                console.log("updating the PID values");
+                document.getElementById('rollP').value = data.rollP;
+                document.getElementById('rollI').value = data.rollI;
+                document.getElementById('rollD').value = data.rollD;
+                document.getElementById('pitchP').value = data.pitchP;
+                document.getElementById('pitchI').value = data.pitchI;
+                document.getElementById('pitchD').value = data.pitchD;
+                document.getElementById('yawP').value = data.yawP;
+                document.getElementById('yawI').value = data.yawI;
+                document.getElementById('yawD').value = data.yawD;  
+                break;
+            case 3: // 3(drone<>GCS): get_motors_order
+              console.log("3(drone<-GCS): get_motors_order \n sending the motors order");
+              set_motors_order(0);
+              break;
+            case 4: // 4(drone<-GCS): set_motors_order{save, top_left, top_right, bottom_left, bottom_right}
+              let save_or_not = data.save;
+              motorsInOrder[0] = data.top_left;
+              motorsInOrder[1] = data.top_right;
+              motorsInOrder[2] = data.bottom_left;
+              motorsInOrder[3] = data.bottom_right;
+              console.log("motors order " + motorsInOrder + "update them on the drone bomma");
+              alert("motors order " + motorsInOrder + "update them on the drone bomma");
+              break;
+            case 5: // 5(drone<>GCS): motors_test{m1_state, m2_state, m3_state, m4_state, speed}
+                // drone should be in MOTOR TESTING mode to apply those speed 
+                // we need a method to find wether the motors are spinning or not
+                console.log("motors are spinning");
+                motor_test();
+                // after leaving the motor test send STABLE MODE
+                break;
+            case 6: // 6(drone<>GCS): get_settings
+                console.log("request for setting, so sending them");
+                set_settings(0);
+                break;
+            case 7: // 7(drone<>GCS): set_settings{max_roll, max_pitch, max_yaw, min_speed, max_speed}
+                rollMax = data.max_roll;
+                pitchMax = data.max_pitch;
+                yawMax = data.max_yaw;
+                speedMin = data.min_speed;
+                speedMax = data.max_speed;
+                console.log("settings updated "+ rollMax + pitchMax + yawMax + speedMin + speedMax);
+                alert("settings updated "+ rollMax + " " + pitchMax + " " + yawMax + " " + speedMin + " " + speedMax);
+                break;
+            case 8: // 8(drone<-GCS): imu_calib_command{step}
+              alert("8(drone<-GCS): imu_calib_command{step} \n this step is only on drone side (drone<-GCS)");
+                break;
+            case 9: // 9(drone->GCS): imu_calib_response{step, response}
+              const current_step = data.step;
+              const response =  data.response;
+
+              const response_txt = "Step " + current_step + " is " + (response === 1 ? "successful" : "failed");
+
+              document.getElementById("imu_response").innerText = response_txt;
+              console.log(data.response);
+              console.log(response_txt);
+              break;
+            case 10: // 10(drone<-GCS): get_orientation
+                alert("10(drone<-GCS): get_orientation \n this step is only on drone side (drone<-GCS)");
+                break;
+            case 11: // 11(drone->GCS): drone_orientation{roll, pitch, yaw}
+                // console.log("Got drone orienation from the drone, updating the values on this page")
+                roll = data.roll;
+                pitch = data.pitch;
+                yaw = data.yaw;
+                altitude = data.altitude;
+                updateDroneOrientation();
+                break;
+            case 12: // 12(drone<-GCS): setpoints{roll, pitch, yaw, altitude}
+              alert("Message ID 12(drone<-GCS): setpoints{roll, pitch, yaw, altitude} \n this step is only on drone side (drone<-GCS)");
+              break;
+
+            case 13: // 13(drone<-GCS): motor_calib_command{step}
+              alert("13(drone<-GCS): motor_calib_command{step} \n this  step is only on drone side (drone<-GCS)");
+              break;
+
+            case 14:{ // 14(drone->GCS): imu_calib_response{step, response}
+              const current_step = data.step;
+              const response =  data.response;
+
+              const response_txt = "Step " + current_step + " is " + (response === 1 ? "successful" : "failed");
+
+              document.getElementById("motor_response").innerText = response_txt;
+              
+              console.log(response_txt);
+              break;
+            }
+
+            default:
+                console.log(`Unknown Message ID: ${messageId}`);
+        }
+    } catch (err) {
+        console.log(`Error parsing message: ${err}`);
+    }
+    }
+
+    function sendPIDValues(save_or_not) {
+      console.log("sent pid values");
+      const pidValues = {
+        id: 2,
+        save: save_or_not,
+        rollP: parseFloat(document.getElementById('rollP').value) || 0,
+        rollI: parseFloat(document.getElementById('rollI').value) || 0,
+        rollD: parseFloat(document.getElementById('rollD').value) || 0,
+        pitchP: parseFloat(document.getElementById('pitchP').value) || 0,
+        pitchI: parseFloat(document.getElementById('pitchI').value) || 0,
+        pitchD: parseFloat(document.getElementById('pitchD').value) || 0,
+        yawP: parseFloat(document.getElementById('yawP').value) || 0,
+        yawI: parseFloat(document.getElementById('yawI').value) || 0,
+        yawD: parseFloat(document.getElementById('yawD').value) || 0,
+      };
+      socket.send(JSON.stringify(pidValues));
+    }
+    
+    function getPIDValues(){
+      const getPID = {
+        id : 1,
+      };
+      socket.send(JSON.stringify(getPID));
+    }
+
+    function updateDroneOrientation() {
+        //update drone actual orientation
+        // alert("updated");
+        document.getElementById("roll").innerText = roll;
+        document.getElementById("pitch").innerText = pitch;
+        document.getElementById("yaw").innerText = yaw;
+        document.getElementById("altitude").innerText = altitude;
+    }
+
+    function getMode(){
+      const getMod = {
+        id : -1,
+      };
+      socket.send(JSON.stringify(getMod));
+    }
+
+    function setMode(mode_number){
+      drone_mode = mode_number;
+      const setMod = {
+        id : 0,
+        mode: mode_number,
+      };
+      socket.send(JSON.stringify(setMod));
+      document.getElementById("setdroneMode").innerText = "mode set to " + drone_mode;
+      document.getElementById("droneMode").innerText = 'drone mode : ' + drone_mode;
+    }
+
+    function get_motors_order(){
+      const getMot = {
+        id : 3,
+      };
+      socket.send(JSON.stringify(getMot));
+    }
+
+    function set_motors_order(save_or_not){
+      console.log("sent command to update the motors order")
+      const setMot = {
+        id : 4,
+        save: save_or_not,
+        top_left : motorsInOrder[0],
+        top_right : motorsInOrder[1],
+        bottom_left : motorsInOrder[2],
+        bottom_right : motorsInOrder[3],
+      };
+      socket.send(JSON.stringify(setMot));
+    }
+
+    function motor_test(){
+      const testMotors = {
+        id : 5,
+        m1_state : motorsSelectionStatus[0],
+        m2_state : motorsSelectionStatus[1],
+        m3_state : motorsSelectionStatus[2],
+        m4_state : motorsSelectionStatus[3],
+        speed: motors_speed,
+      };
+      socket.send(JSON.stringify(testMotors));
+    }
+
+    function get_settings(){
+      const getMot = {
+        id : 6,
+      };
+      socket.send(JSON.stringify(getMot));
+    }
+
+    function set_settings(save_or_not){
+      const setMot = {
+        id : 7,
+        save: save_or_not,
+        max_roll : rollMax,
+        max_pitch : pitchMax,
+        max_yaw : yawMax,
+        min_speed : speedMin,
+        max_speed : speedMax,
+      };
+      socket.send(JSON.stringify(setMot));
+      console.log("commanding to update settings");
+    }
+
+    function send_setpoints(){
+      setpoints = [2, 3, 4, 5];
+      // roll, pitch, yaw, altitude
+      const setpnts = {
+        id : 12,
+        roll : 1,
+        pitch : 4,
+        yaw : 3,
+        altitude : 1000,
+      };
+      socket.send(JSON.stringify(setpnts));
+      console.log("commanding to update setpoints " + setpoints);
+    }
+
+    function imu_calib_cmd(current_step){
+      const calib_step = {
+        id : 8,
+        step : current_step,
+      };
+      socket.send(JSON.stringify(calib_step));
+      console.log("commanding to start imu calibration step " + current_step);
+    }
+
+    function motor_calib_cmd(current_step){
+      const calib_step = {
+        id : 13,
+        step : current_step,
+      };
+      socket.send(JSON.stringify(calib_step));
+      console.log("commanding to start motor calibration step " + current_step);
+    }
+
+    window.onload = function () {
+      connectWebSocket();
+    };
+  </script>
+</head>
+<body>
+  <h1>ESP32 MPU6050 WebSocket Control <span id="connection_status" style="color: red;">not connected</span> </h1>
+  <div>
+    <h2>Sensor Data</h2>
+    <p>Roll: <span id="roll">0</span></p>
+    <p>Pitch: <span id="pitch">0</span></p>
+    <p>Yaw: <span id="yaw">0</span></p>
+    <p>Alt: <span id="altitude">0</span></p>
+  </div>
+  <div>
+    <h2>Set PID Values</h2>
+    <label>Roll P: <input type="number" id="rollP" step="0.01"></label><br>
+    <label>Roll I: <input type="number" id="rollI" step="0.01"></label><br>
+    <label>Roll D: <input type="number" id="rollD" step="0.01"></label><br>
+    <label>Pitch P: <input type="number" id="pitchP" step="0.01"></label><br>
+    <label>Pitch I: <input type="number" id="pitchI" step="0.01"></label><br>
+    <label>Pitch D: <input type="number" id="pitchD" step="0.01"></label><br>
+    <label>Yaw P: <input type="number" id="yawP" step="0.01"></label><br>
+    <label>Yaw I: <input type="number" id="yawI" step="0.01"></label><br>
+    <label>Yaw D: <input type="number" id="yawD" step="0.01"></label><br>
+    <button onclick="sendPIDValues(1);">Save PID Values to EEPROM</button>
+    <button onclick="sendPIDValues(0);">Send PID Values</button>
+    <button onclick="getPIDValues();">Get PID Values</button>
+
+    <br><hr>
+    <span id="droneMode">mode</span>
+    <button onclick="getMode();">Get mode</button>
+    
+    <br><hr>
+    <span id="setdroneMode">mode</span>
+    <button onclick="setMode(0);">Set mode 0 </button>
+    <button onclick="setMode(1);">Set mode 1 </button>
+    <button onclick="setMode(2);">Set mode 2 </button>
+    <button onclick="setMode(3);">Set mode 3 </button>
+    <button onclick="setMode(4);">Set mode 4 </button>
+    <button onclick="setMode(5);">Set mode 5 </button>
+    
+    <br><hr>
+    <button onclick="get_motors_order();">Get motors order </button>
+    <button onclick="set_motors_order(0);">Set motors order </button>
+    <button onclick="set_motors_order(1);">Save motors order to EEPROM</button>
+    
+    <br><hr>
+    <button onclick="motor_test();">motors test </button>
+    
+    <br><hr>
+    <button onclick="get_settings();">Get settings </button>
+    <button onclick="set_settings(0);">Set settings </button>
+    <button onclick="set_settings(1);">Save settings to EEPROM</button>
+    
+    <br><hr>
+    <button onclick="send_setpoints();">send setpoint </button>
+   
+    <br><hr>
+    <span id="imu_response">IMU calibration</span>
+    <button onclick="imu_calib_cmd(0);">IMU calib step 0 </button>
+    <button onclick="imu_calib_cmd(1);">IMU calib step 1 </button>
+    <button onclick="imu_calib_cmd(2);">IMU calib step 2 </button>
+    <button onclick="imu_calib_cmd(3);">IMU calib step 3 </button>
+    <button onclick="imu_calib_cmd(4);">IMU calib step 4 </button>
+    <button onclick="imu_calib_cmd(5);">IMU calib step 5 </button>
+    <button onclick="imu_calib_cmd(6);">IMU calib step 6 </button>
+
+    <br><hr>
+    <span id="motor_response">Motor calibration</span>
+    <button onclick="motor_calib_cmd(0);">motor calib step 0 </button>
+    <button onclick="motor_calib_cmd(1);">motor calib step 1 </button>
+    <button onclick="motor_calib_cmd(2);">motor calib step 2 </button>
+    <button onclick="motor_calib_cmd(3);">motor calib step 3 </button>
+    <button onclick="motor_calib_cmd(4);">motor calib step 4 </button>
+    
+  </div>
+</body>
+</html>

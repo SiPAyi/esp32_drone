@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div id="nav">
+        <div id="connection_status_div">
+            <span id="droneMode" onclick="getMode();">Mode : Setup</span>
+            <span id="connection_status"> Not Connected</span>
+            <h1>Drone</h1>
+            <div id="ip_address">
+                    <span>IP address:<span contenteditable="true" id="ip_address_span"> </span></span>
+                    <span id="change_ip" onclick="console.log('changed ip'); changeIp();">connect</span>
+            </div>
+        </div>
+
+            <div id="tabs">
+                <div class="tab" id="drone_info_tab" style="font-weight: bold; color: red;" onclick="show_or_hide_block('drone_info'); ">Home</div>
+                <div class="tab" id="calibration_tab" onclick="show_or_hide_block('calibration');">Calib</div>
+                <div class="tab" id="pid_inputs_tab" onclick="show_or_hide_block('pid_inputs');">PID</div>
+                <div class="tab" id="joy_tab" onclick="show_or_hide_block('joy');">Joy</div>
+                <div class="tab" id="log_tab" onclick="show_or_hide_block('log');">Log</div>
+                <div class="tab" id="settings_tab" onclick="show_or_hide_block('settings');">Settings</div>
+            </div>
+    </div>
+
+    <div class="blocks" id="drone_info">
+        
+        <div id="drone_orientation">
+            <div>Roll: <span id="roll">360</span></div>
+            <div>Pitch: <span id="pitch">360</span></div>
+            <div>Yaw: <span id="yaw">360</span></div>
+            <div>Alt: <span id="altitude">360</span></div>
+        </div>
+
+
+        <div id="drone_container">
+            <div id="drone_display">
+                <div id="drone">
+                    <div id="front" onclick="get_motors_order();"></div>
+                    <!-- Arms -->
+                    <div class="arm top-left" data-arm="top-left"></div>
+                    <div class="arm top-right" data-arm="top-right"></div>
+                    <div class="arm bottom-left" data-arm="bottom-left"></div>
+                    <div class="arm bottom-right" data-arm="bottom-right"></div>
+                    <!-- Propellers -->
+                    <div class="propeller top-left" data-motor="1">1</div>
+                    <div class="propeller top-right" data-motor="2">2</div>
+                    <div class="propeller bottom-left" data-motor="3">3</div>
+                    <div class="propeller bottom-right" data-motor="4">4</div>
+                </div>
+            </div>
+
+            <!-- Modal for Selecting Propeller Number -->
+            <div id="propellerModal">
+                <h3 style="width: 250px;">Assign Number to Propeller</h3>
+                <div id="modalChoices">
+                    <!-- Choices will be dynamically inserted here -->
+                </div>
+                <button id="confirmChoice" onclick="confirm_selected_choice();" style="margin-top: 10px;">Confirm</button>
+                <button id="cancelChoice" onclick="cancel_selected_choice();" style="margin-top: 10px;">Cancel</button>
+            </div>
+            <div id="overlay">
+            </div>
+
+            <div class="slider-container" id="speed_controller_div" style="display: none; padding: 10px;">
+                <div class="value-display" id="speed-display" onclick="reset_speed();">Speed: 100</div>
+                <input id="speed-slider" type="range" min="0" max="100" value="0" step="1">
+            </div>
+
+            <div id="buttons_div">
+                <button id="speed_control" onclick="change_speed_control_state(this);">start motor test</button>
+                <button id="logSelection" onclick="log_selected_motors();">Show selected arms</button>
+                <button onclick="set_motors_order(1);">Save Motors Order</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="blocks" id="calibration">
+        <div id="calibration_div">
+            <div class="offset_values" id="offsets_block">
+                <h3 onclick="get_imu_offsets();">IMU Offsets:</h3>
+                <div id="offsets">
+                    <div>Roll: <span id="roll_offset">360</span></div>
+                    <div>Pitch: <span id="pitch_offset">360</span></div>
+                    <div>Yaw: <span id="yaw_offset">360</span></div>
+                    <div>acc_x: <span id="accx_offset">360</span></div>
+                    <div>acc_y: <span id="accy_offset">360</span></div>
+                    <div>acc_z: <span id="accz_offset">360</span></div>
+                </div>
+                <h3 style="margin-top:20px;" onclick="get_imu_offsets();">Calibration Factors:</h3>
+                <div id="offsets">
+                    <div>Roll: <span id="roll_scalling">360</span></div>
+                    <div>Pitch: <span id="pitch_scalling">360</span></div>
+                    <div>Yaw: <span id="yaw_scalling">360</span></div>
+                    <div>acc_x: <span id="accx_scalling">360</span></div>
+                    <div>acc_y: <span id="accy_scalling">360</span></div>
+                    <div>acc_z: <span id="accz_scalling">360</span></div>
+                </div>
+            </div>
+    
+            <div id="calib_list">
+                <h3 id="imu_calib" href="#calib">IMU Calibration</h3>
+                <h3 id="esc_calib" href="#calib">ESC Calibration</h3>
+            </div>
+    
+            <div class="calib" id="calib">
+                <div id="step-container" class="step-content">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div id="step-number"></div>
+                    <div id="step-visual"></div>
+                    <div id="step-description">Let's start the calibration :)</div>
+                    <div id="calib_step_response"></div>
+                    <div id="buttons">
+                        <button id="calibrateBtn">Start</button>
+                        <button id="prevBtn" style="display:none;">Previous Step</button>
+                        <button id="startBtn" style="display:none;">Start Step</button>
+                        <button id="nextBtn" style="display:none;">Next Step</button>
+                        <button id="resetBtn" style="display:none;">Reset</button>
+                    </div>
+                </div>        
+            </div>
+        </div>
+    </div>
+
+    <div class="blocks" id="pid_inputs">
+        <!-- <div id="pidSuggestion"><button onclick="start_python_socket();">connect to pid suggester</button></div> -->
+        <!-- <h2>PID Values:</h2> -->
+        <div class="pid_status">
+            <div class="errors">
+                <div class="pid_status_txt">Errors: </div>
+                <div id="error1">0.0000</div>
+                <div id="error2">0.0000</div>
+                <div id="error3">0.0000</div>
+                <div id="error4">0.0000</div>
+            </div>
+            <div class="pid_outs">
+                <div class="pid_status_txt">PID outs: </div>
+                <div id="pid_out1">0.0000</div>
+                <div id="pid_out2">0.0000</div>
+                <div id="pid_out3">0.0000</div>
+                <div id="pid_out4">0.0000</div>
+            </div>
+            <div class="motor_speeds">
+                <div class="pid_status_txt">Motor speed: </div>
+                <div id="motor_speed1">0.0000</div>
+                <div id="motor_speed2">0.0000</div>
+                <div id="motor_speed3">0.0000</div>
+                <div id="motor_speed4">0.0000</div>
+            </div>
+
+            <div class="throttle" style="margin-top: 20px;">
+                <label for='basethrottle'>Base Throttle: </label><span id="basethrottle_text">1000</span>
+                <input type='range' min='1000' max='2000' value='1000' step="1" class='slider' id='basethrottle'
+                 style="width:100%;">
+            </div>
+
+            <div id="blackbox_btn" style="background-color: green; padding: 5px; border-radius: 5px; color: white" onclick="blackbox();">start blackbox</div>
+        </div>
+
+        <div class="pid_input">
+            
+            <h3>Roll PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="rpmin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='rpValue'>P Value: </label><span id="rp_value_text">25</span></div>
+                <input type="number" id="rpmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='30' value='0' step="0.01" class='slider' id='rpValue'
+                 style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="rimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='riValue'>I Value: </label><span id="ri_value_text"></span></div>
+                <input type="number" id="rimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0' step="0.000001" class='slider' id='riValue'
+                 style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="rdmin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='rdValue'>D Value: </label><span id="rd_value_text"></span></div>
+                <input type="number" id="rdmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='30' value='0' step="0.01" class='slider' id='rdValue'
+                 style="width:100%;">
+        </div>
+
+        <div class="pid_input">
+            <h3>Pitch PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="ppmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ppValue'>P Value: </label><span id="pp_value_text">25</span></div>
+                <input type="number" id="ppmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='30' value='0' step="0.01" class='slider' id='ppValue'
+                 style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="pimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='piValue'>I Value: </label><span id="pi_value_text">0.5</span></div>
+                <input type="number" id="pimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0' step="0.000001" class='slider' id='piValue'
+                 style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="pdmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='pdValue'>D Value: </label><span id="pd_value_text">25</span></div>
+                <input type="number" id="pdmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='30' value='0' step="0.01" class='slider' id='pdValue'
+                 style="width:100%;">
+        </div>
+
+        <div class="pid_input">
+            <h3>Yaw PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="ypmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ypValue'>P Value: </label><span id="yp_value_text">25</span></div>
+                <input type="number" id="ypmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='30' value='0' step="0.01" class='slider' id='ypValue'
+                 style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="yimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='yiValue'>I Value: </label><span id="yi_value_text">0.5</span></div>
+                <input type="number" id="yimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0' step="0.000001" class='slider' id='yiValue'
+                 style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="ydmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ydValue'>D Value: </label><span id="yd_value_text">25</span></div>
+                <input type="number" id="ydmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='30' value='0' step="0.01" class='slider' id='ydValue'
+                 style="width:100%;">
+        </div>
+
+        <div id="pidRelatedBtn">
+            <button onclick="getPIDValues();">Get PIDs</button>
+            <button onclick="sendPIDValues(1);">Save PIDs</button>
+
+        </div>
+    </div>
+
+    <div class="blocks" id="joy">
+        <button id="fullscreen">Enter Fullscreen</button>
+        <div id="mode-text">
+            Mode: <span id="current-mode">None</span> 
+            <button id="mode">Switch to Manual mode</button>
+        </div>
+        
+        <div id="joy_controller" style="display: none;">
+            <div id="joy_values">
+                <span id="joystick1x">0</span>
+                <span id="joystick1y">0</span>
+                <span id="joystick2x">0</span>
+                <span id="joystick2y">0</span>
+            </div>
+            
+            <div class="joystick-wrapper" >
+                <div class="joystick-container" id="joystick1">
+                    <div class="joystick-knob" id="knob1"></div>
+                </div>
+                <div class="joystick-container" id="joystick2">
+                    <div class="joystick-knob" id="knob2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="blocks" id="settings">
+        <div class="constant_values">
+            <!-- <h2>Settings</h2> -->
+            <div class="min_max_values">
+                <h3 onclick="get_settings();">Min-Max Values:</h3>
+                <div class="input-container">
+                    <label for="roll-max">Roll Max:</label>
+                    <input id="roll-max" type="number" value="45" step="1" onchange="set_settings(0);">
+                </div>
+    
+                <div class="input-container">
+                    <label for="pitch-max">Pitch Max:</label>
+                    <input id="pitch-max" type="number" value="45" step="1" onchange="set_settings(0);">
+                </div>
+    
+                <div class="input-container">
+                    <label for="yaw-max">Yaw Max:</label>
+                    <input id="yaw-max" type="number" value="180" step="1" onchange="set_settings(0);">
+                </div>
+    
+                <div class="input-container">
+                    <label for="speed-min">Speed Min:</label>
+                    <input id="speed-min" type="number" value="1000" step="1" onchange="set_settings(0);">
+                </div>
+                <div class="input-container">
+                    <label for="speed-max">Speed Max:</label>
+                    <input id="speed-max" type="number" value="2000" step="1" onchange="set_settings(0);">
+                </div>
+            </div>
+
+            <button onclick="set_settings(1);">Save Settings</button>
+        </div>
+    </div>
+
+    <div class="blocks" id="log">
+        <div id="view_selection">
+            <span class="active_option" id="store" onclick="show_store_data();">Store Data</span>
+            |
+            <span id="load" onclick="show_load_data();">Load Data</span>
+        </div>    
+
+        <div class="view_option" id="saveSection" style="display: flex;">
+            <div id="inputSection">
+                <div>Roll: <span id="roll_log">360</span></div>
+                <div>Pitch: <span id="pitch_log">360</span></div>
+                <div>Yaw: <span id="yaw_log">360</span></div>
+                <div>Alt: <span id="altitude_log">360</span></div>
+
+                <!-- used the below ones when the drone is not connected  -->
+                <!-- <label for="roll_log">Roll: <input type="number" id="roll_log" value = "360" onchange="add_data()"></label>
+                <label for="pitch_log">Pitch: <input type="number" id="pitch_log" value = "9" onchange="add_data()"></label>
+                <label for="yaw_log">Yaw: <input type="number" id="yaw_log" value = "9" onchange="add_data()"></label>
+                <label for="altitude_log">Altitude: <input type="number" id="altitude_log" value = "9" onchange="add_data()"></label> -->
+            </div>
+            <div id="recordBtn" onclick="recording();">Start Recording</div>
+            <div id="storeBtn" style="display: none;">
+                <label for="dataSetName"><input type="text" id="dataSetName" placeholder="Enter record name"></label>
+                <button onclick="storeData();">Store</button>
+                <button onclick="clearData();">Clear</button>
+                <!-- <button onclick="storeData()">Store</button> -->
+            </div>
+        </div>
+        
+        <div class="view_option" id="loadSection" style="display: none;">
+            <select id="dataSets"></select>
+            <button onclick="loadData()">Load</button>
+            <button onclick="downloadData()">csv</button>
+            <button onclick="deleteData()">Delete</button>
+        </div>
+        
+        <div id="graph">
+            <label for="bufferSize">Buffer Size:</label>
+            <input type="number" id="bufferSize" value="50" step="1" min="1" onchange="maxPoints = parseInt(this.value) || 50;">
+            <canvas id="rpyChart"></canvas>
+            <!-- you should add the below script to get the graph in the above canvas -->
+            <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+
+</html>

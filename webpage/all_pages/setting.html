@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone</title>
+    <!-- <style>
+/* Global Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', Arial, sans-serif;
+        scroll-behavior: smooth;
+        box-sizing: border-box;
+    }
+
+
+    body {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        color: #333;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .blocks {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        margin-top: 5px;
+        width: 90%;
+        max-width: 900px;
+        text-align: center;
+        animation: fadeIn 0.6s ease-in-out;
+    }
+
+/* settings block related */
+
+/* Global Styles */
+
+/* Heading Styles */
+#settings .blocks h3 {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+    color: #0277bd;
+}
+
+/* Input Container */
+#settings .input-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+    padding: 10px;
+    background: #f1f8ff;
+    border-radius: 8px;
+    box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+#settings .input-container label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #01579b;
+    flex: 1;
+    text-align: left;
+    padding-left: 10px;
+}
+
+#settings .input-container input {
+    flex: 1;
+    padding: 8px;
+    border: 2px solid #90caf9;
+    border-radius: 6px;
+    outline: none;
+    font-size: 1rem;
+    transition: 0.3s;
+    max-width: 150px;
+}
+
+#settings .input-container input:focus {
+    border-color: #0277bd;
+    box-shadow: 0px 0px 8px rgba(2, 119, 189, 0.4);
+}
+
+/* Button Styling */
+#settings button {
+    background: #0277bd;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: 0.3s ease-in-out;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+#settings button:hover {
+    background: #01579b;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.constant_values{
+    width: 100%;
+}
+
+/* Fade-in Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+    </style> -->
+
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+    <div class="blocks" id="settings" style="display: flex;">
+        <div class="constant_values">
+            <!-- <h2>Settings</h2> -->
+            <div class="min_max_values">
+                <h3>Min-Max Values:</h3>
+                <div class="input-container">
+                    <label for="roll-max">Roll Max:</label>
+                    <input id="roll-max" type="number" value="45" step="1">
+                </div>
+    
+                <div class="input-container">
+                    <label for="pitch-max">Pitch Max:</label>
+                    <input id="pitch-max" type="number" value="45" step="1">
+                </div>
+    
+                <div class="input-container">
+                    <label for="yaw-max">Yaw Max:</label>
+                    <input id="yaw-max" type="number" value="180" step="1">
+                </div>
+    
+                <div class="input-container">
+                    <label for="speed-min">Speed Min:</label>
+                    <input id="speed-min" type="number" value="1000" step="1">
+                </div>
+                <div class="input-container">
+                    <label for="speed-max">Speed Max:</label>
+                    <input id="speed-max" type="number" value="2000" step="1">
+                </div>
+            </div>
+
+            <button onclick="save_settings();">Save Settings</button>
+        </div>
+    </div>
+
+</body>
+
+<script>
+// // // global variables
+    // orientation constants
+    let roll = 0, pitch = 0, yaw= 0, pid_out = 0;
+
+    // some settings
+    let rollMax = 45;
+    let pitchMax = 45;
+    let yawMax = 45;
+    let speedMin = 1000;
+    let speedMax = 2000;
+
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+// //
+// // // settings related
+// //
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+
+// You can now access the min and max values for roll, pitch, and yaw directly
+    const rollMaxInput = document.getElementById('roll-max');
+    const pitchMaxInput = document.getElementById('pitch-max');
+    const yawMaxInput = document.getElementById('yaw-max');
+    const speedMinInput = document.getElementById('speed-min');
+    const speedMaxInput = document.getElementById('speed-max');
+
+// setting the values from the drone or default some values
+    function save_settings() {
+        rollMax = rollMaxInput.value;
+        pitchMax = pitchMaxInput.value;
+        yawMax = yawMaxInput.value;
+        speedMin = speedMinInput.value;
+        speedMax = speedMaxInput.value;
+
+        alert('Settings need to be Saved/Exported!')
+        console.log('Settings need to be Saved/Exported!')
+    }
+
+    function import_settings(){
+        rollMaxInput.value = rollMax;
+        pitchMaxInput.value = pitchMax;
+        yawMaxInput.value = yawMax;
+        speedMinInput.value = speedMin;
+        speedMaxInput.value = speedMax;
+
+        alert('Settings are imported!')
+        console.log('Settings are imported!')        
+    }
+    window.onload = function () {
+        import_settings();
+    };
+</script>
+</html>

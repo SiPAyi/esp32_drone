@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone</title>
+    <style>
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', Arial, sans-serif;
+    scroll-behavior: smooth;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Blocks Styling */
+.blocks {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 10px;
+    width: 90%;
+    max-width: 900px;
+    text-align: center;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+/* start of joystick division */
+#joy{
+        height: 100vh;
+        justify-content: space-evenly;
+        align-content: stretch;
+        align-items: baseline;
+        flex-direction: column;
+        max-width: 900px;
+        margin: 0px auto;
+        padding: 0px 10px;
+        display: none;
+    }
+
+    #controller_block{    
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: center;
+        margin: 0px auto;
+}
+
+    .joy_sticks_block{
+        display: flex;
+        flex-direction: row;
+        width: min(900px, 100vw);
+        justify-content: space-around;
+        /* margin: 0px auto; */
+    }
+
+    .joystick-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 20px;
+        border: 2px solid #000;
+        border-radius: 50%;
+        background: #ddd;
+    }
+    .joystick-knob {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        background: #007bff;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        left: 50%;
+        top: 50%;
+    }
+    .joystick {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .output {
+        margin-top: 10px;
+        font-size: 16px;
+    }
+
+    @media screen and (max-width: 450px) {
+        #controller_block{
+            transform-style: preserve-3d;
+            transform-origin: center;
+            transform: rotateX(0deg) rotateY(0deg) rotateZ(90deg);
+            transition: transform 0.1s ease-in-out;
+        }
+    }
+/* end of joystick division */
+
+    </style>
+</head>
+
+<body>
+    <div class="blocks" id="joy" style="display: flex;">
+        <div id="controller_block">
+            <h2 style="text-align: center;">Drone Joystick Controller</h2>
+            
+            <div class="drone_state">
+                <div>Roll: <span id="roll_status">100</span></div>
+                <div>Pitch: <span id="pitch_status">100</span></div>
+                <div>Yaw: <span id="yaw_status">100</span></div>
+            </div>
+
+            <div class="joy_sticks_block">
+                <div class="joystick">
+                    <div class="joystick-container" id="joystick1">
+                        <div class="joystick-knob" id="knob1"></div>
+                    </div>
+                    <div class="output" id="output1">X: 0, Y: 0</div>
+                </div>
+                <div class="joystick">
+                    <div class="joystick-container" id="joystick2">
+                        <div class="joystick-knob" id="knob2"></div>
+                    </div>
+                    <div class="output" id="output2">X: 0, Y: 0</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="enterFullscreen">Enter Fullscreen</button>
+                <button id="exitFullscreen" style="display: none;">Exit Fullscreen</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+function setupJoystick(containerId, knobId, outputId) {
+    const container = document.getElementById(containerId);
+    const knob = document.getElementById(knobId);
+    const output = document.getElementById(outputId);
+
+    const containerRadius = container.offsetWidth / 2;
+    const knobRadius = knob.offsetWidth / 2;
+    const maxDistance = containerRadius - knobRadius;
+
+    let isDragging = false;
+
+    container.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        moveKnob(e.clientX, e.clientY);
+    });
+
+    container.addEventListener("touchstart", (e) => {
+        isDragging = true;
+        const touch = e.touches[0];
+        moveKnob(touch.clientX, touch.clientY);
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (isDragging) moveKnob(e.clientX, e.clientY);
+    });
+
+    document.addEventListener("touchmove", (e) => {
+        if (isDragging) {
+            const touch = e.touches[0];
+            moveKnob(touch.clientX, touch.clientY);
+        }
+    });
+
+    document.addEventListener("mouseup", () => {
+        if (isDragging) resetKnob();
+        isDragging = false;
+    });
+
+    document.addEventListener("touchend", () => {
+        if (isDragging) resetKnob();
+        isDragging = false;
+    });
+
+    function moveKnob(clientX, clientY) {
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.left + containerRadius;
+        const centerY = rect.top + containerRadius;
+
+        let dx = clientX - centerX;
+        let dy = clientY - centerY;
+
+        const isRotated = window.matchMedia("(max-width: 450px)").matches;
+
+        if (isRotated) {
+            [dx, dy] = [dy, -dx];
+        }
+
+        const distance = Math.min(Math.sqrt(dx * dx + dy * dy), maxDistance);
+
+        if (distance > 0) {
+            const angle = Math.atan2(dy, dx);
+            dx = Math.cos(angle) * distance;
+            dy = Math.sin(angle) * distance;
+        }
+
+        knob.style.left = `${containerRadius + dx}px`;
+        knob.style.top = `${containerRadius + dy}px`;
+
+        const normalizedX = Math.round((dx / maxDistance) * 100);
+        const normalizedY = Math.round((-dy / maxDistance) * 100);
+
+        output.textContent = `X: ${normalizedX}, Y: ${normalizedY}`;
+    }
+
+    function resetKnob() {
+        knob.style.left = `${containerRadius}px`;
+        knob.style.top = `${containerRadius}px`;
+        output.textContent = `X: 0, Y: 0`;
+    }
+}
+
+// Setup fullscreen functionality
+const joyBlock = document.getElementById("joy");
+const enterFullscreenBtn = document.getElementById("enterFullscreen");
+const exitFullscreenBtn = document.getElementById("exitFullscreen");
+
+
+enterFullscreenBtn.addEventListener("click", () => {
+    if (joyBlock.requestFullscreen) {
+        joyBlock.requestFullscreen();
+    } else if (joyBlock.webkitRequestFullscreen) { // Safari
+        joyBlock.webkitRequestFullscreen();
+    } else if (joyBlock.msRequestFullscreen) { // IE/Edge
+        joyBlock.msRequestFullscreen();
+    }
+    enterFullscreenBtn.style.display = "none";
+    exitFullscreenBtn.style.display = "inline-block";
+});
+
+exitFullscreenBtn.addEventListener("click", () => {
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) { // Safari
+        document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) { // IE/Edge
+        document.msExitFullscreen();
+    }
+    joyBlock.style.color = "black";
+    enterFullscreenBtn.style.display = "inline-block";
+    exitFullscreenBtn.style.display = "none";
+});
+
+setupJoystick("joystick1", "knob1", "output1");
+setupJoystick("joystick2", "knob2", "output2");
+
+
+
+</script>
+
+</html>

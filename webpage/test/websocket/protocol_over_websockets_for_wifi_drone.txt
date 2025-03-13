@@ -1,0 +1,9 @@
+message_id, data
+0(drone<-GCS): modes{0->standby, 1->motor_calib, 2->imu_calib, 3->guided, 4-> auto}
+1(drone<-GCS): PIDs(proll, iroll, droll, ppitch, ipitch, dpitch, pyaw, iyaw, dyaw)
+2(drone<-GCS): motor_calib(m1_state, m2_state, m3_state, m4_state, m1_speed, m2_speed, m3_speed, m4_speed)
+3(drone->GCS): drone_orientation(roll, pitch, yaw)
+4(drone<>GCS): settings(import_or_export{0, 1}, min_roll, max_roll, min_pitch, max_pitch, min_yaw, max_yaw)
+5(drone<>GCS): imu_calib(step, response)
+
+

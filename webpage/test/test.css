@@ -1,0 +1,447 @@
+body {
+    margin: 0px;
+}
+
+h1 {
+    text-align: center;
+    padding: 10px;
+    margin: 0px;
+}
+
+#connection_status{
+    color: blue;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    padding: 5px;   
+}
+
+#connection_status_div{
+    background-color: #dede4a;
+}
+
+h2 {
+    margin: 0px;
+    text-align: center;
+}
+
+h3{
+    margin-bottom: 0.5em;
+}
+
+#ip_address {
+    display: flex;
+    max-width: 900px;
+    margin: 0px auto;
+    align-items: center;
+    justify-content: center;
+}
+
+#ip_address>div {
+    display: flex;
+    align-items: center;
+}
+
+#change_ip {
+    padding: 5px 0px;
+    background: #6adf3bf2;
+    border-radius: 10px;
+    margin: 2px 10px;
+    display: flex;
+    align-items: center;
+    width: 100px;
+    justify-content: center;
+}
+
+#tabs{
+    display: flex;
+    justify-content: space-evenly;
+    margin: 5px auto;
+    border-bottom: dashed 1px gray;
+}
+
+
+#pid_inputs, #calibration, #settings, #log{
+    display: none;
+    flex-direction: column;
+    max-width: 900px;
+    margin: 0px auto;
+    padding: 0px 10px;
+}
+
+#drone_info{
+    display: flex;
+    margin: auto;
+    align-items: center;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+#drone_info>h2{
+    width: 100%;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#drone_pose{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    margin: 10px 0px;
+    max-width: 450px;
+}
+
+#drone_parameters>h3{
+    align-self: baseline;
+}
+
+
+#orientation{
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: 5px;
+    justify-content: space-around;
+    margin: 5px;
+}
+
+#orientation div{
+    text-align: center;
+    min-width: 100px;
+}
+
+#offsets {
+    display: flex;
+    width: 100%;
+    row-gap: 5px;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+}
+
+
+#offsets div {
+    min-width: 75px;
+}
+
+#message_from_drone {
+    display: flex;
+    width: 100%;
+    margin-left: 20px;
+}
+
+#calib_list{
+    display: flex;
+    justify-content: space-around;
+}
+
+.calib{
+    align-content: center;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 100%;
+}
+
+.calib-step {
+    opacity: 0.5; /* Initially make the steps semi-transparent */
+    display: none; /* Hide all steps initially */
+    margin: 0px;
+}
+
+.prev_step{
+    opacity: 0.5;
+    display: block;
+}
+
+.active-step {
+    display: block; /* Show only the active step */
+    opacity: 1; /* Fully visible */
+}
+
+
+.pid_input {
+    width: 100%;
+}
+
+#min_values,
+#max_values {
+    display: flex;
+    gap: 10px;
+}
+
+.min_max {
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+
+}
+
+.min_max>input {
+    max-width: 60px;
+    border: none;
+}
+
+.min_max>.maxs {
+    text-align: end;
+}
+
+/* start of drone bomma division */
+    #drone_container{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 5px;
+        justify-content: center;
+    }
+
+    #drone_display {
+        width: 200px;
+        aspect-ratio: 1/1;
+        perspective: 1000px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 5px;
+    }
+
+    #drone {
+        position: relative;
+        width: 50px;
+        aspect-ratio: 1/1;
+        background: linear-gradient(to bottom, #007bff, #0056b3);
+        transform-style: preserve-3d;
+        transform-origin: center;
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+        transition: transform 0.1s ease-in-out;
+    }
+
+    /* Front indicator for the drone */
+    #front {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 20px;
+        background-color: red;
+        clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    }
+
+    /* Propellers of the drone */
+    .propeller {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: gray;
+        border-radius: 50%;
+        padding: 5px;
+    }
+
+    .propeller.top-left {
+        top: -50px;
+        left: -50px;
+    }
+
+    .propeller.top-right {
+        top: -50px;
+        right: -50px;
+    }
+
+    .propeller.bottom-left {
+        bottom: -50px;
+        left: -50px;
+    }
+
+    .propeller.bottom-right {
+        bottom: -50px;
+        right: -50px;
+    }
+
+    /* Arms connecting the body and the propellers */
+    .arm {
+        position: absolute;
+        width: 65px;
+        height: 10px;
+        background-color: black;
+    }
+    
+    .arm.selected {
+        background: #19dd23; /* Selected color */
+    }
+
+    .arm.top-left {
+        top: -25px;
+        left: -50px;
+        transform: rotate(45deg);
+        transform-origin: center;
+    }
+
+    .arm.top-right {
+        top: -25px;
+        right: -50px;
+        transform: rotate(-45deg);
+        transform-origin: center;
+    }
+
+    .arm.bottom-left {
+        bottom: -25px;
+        left: -50px;
+        transform: rotate(-45deg);
+        transform-origin: center;
+    }
+
+    .arm.bottom-right {
+        bottom: -25px;
+        right: -50px;
+        transform: rotate(45deg);
+        transform-origin: center;
+    }
+
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 300px;
+    }
+
+    #drone_container .slider-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    #drone_container .slider-container span{
+        width: 35px;
+    }
+
+    input[type="range"] {
+        width: 200px;
+    }
+/* end of drone bomma division */
+
+/* start of motor control division */
+
+.calib .slider-container {
+    margin: 20px auto;
+    width: 100%;
+    text-align: center;
+}
+
+.calib .slider-container label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.calib .slider-container input[type="range"] {
+    width: 100%;
+}
+
+.input-container {
+    margin: 5px auto;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.input-container input[type="number"] {
+    width: 45px;
+    margin: 5px;
+}
+
+.motor_calib_div {
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+    justify-content: space-evenly;
+}
+
+@media screen and (max-width: 450px) {
+    div {
+        font-size: 14px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .motor_calib_div {
+        flex-direction: column;
+    }
+}
+
+/* end of motor control division */
+
+
+/* start of joystick division */
+    #joy{
+        height: 100vh;
+        justify-content: space-evenly;
+        align-content: stretch;
+        align-items: baseline;
+        flex-direction: column;
+        max-width: 900px;
+        margin: 0px auto;
+        padding: 0px 10px;
+        display: none;
+    }
+
+    #controller_block{    
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: center;
+        margin: 0px auto;
+}
+
+    .joy_sticks_block{
+        display: flex;
+        flex-direction: row;
+        width: min(900px, 100vw);
+        justify-content: space-around;
+        /* margin: 0px auto; */
+    }
+
+    .joystick-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 20px;
+        border: 2px solid #000;
+        border-radius: 50%;
+        background: #ddd;
+    }
+    .joystick-knob {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        background: #007bff;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        left: 50%;
+        top: 50%;
+    }
+    .joystick {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    /* .drone_state{
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+    } */
+    .output {
+        margin-top: 10px;
+        font-size: 16px;
+    }
+
+    @media screen and (max-width: 450px) {
+        #controller_block{
+            transform-style: preserve-3d;
+            transform-origin: center;
+            transform: rotateX(0deg) rotateY(0deg) rotateZ(90deg);
+            transition: transform 0.1s ease-in-out;
+        }
+    }
+/* end of joystick division */

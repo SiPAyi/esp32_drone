@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone</title>
+    <style>
+/* Global Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', Arial, sans-serif;
+        scroll-behavior: smooth;
+        box-sizing: border-box;
+    }
+
+
+    body {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        color: #333;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .blocks {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        margin-top: 5px;
+        width: 90%;
+        max-width: 900px;
+        text-align: center;
+        animation: fadeIn 0.6s ease-in-out;
+    }
+
+/* pid block related */
+.pid_input {
+    width: 100%;
+}
+
+#min_values,
+#max_values {
+    display: flex;
+    gap: 10px;
+}
+
+.min_max {
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+
+}
+
+.min_max>input {
+    max-width: 60px;
+    border: none;
+}
+
+.min_max>.maxs {
+    text-align: end;
+}
+
+    </style>
+</head>
+
+<body>
+
+    <div class="blocks" id="pid_inputs">
+        <div class="pid_input">
+            <h3>Roll PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="rpmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='rpValue'>P Value: </label><span id="rp_value_text">25</span></div>
+                <input type="number" id="rpmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='rpValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="rimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='riValue'>I Value: </label><span id="ri_value_text">0.5</span></div>
+                <input type="number" id="rimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0.5' step="0.000001" class='slider' id='riValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="rdmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='rdValue'>D Value: </label><span id="rd_value_text">25</span></div>
+                <input type="number" id="rdmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='rdValue'
+                onInput="send_pids();" style="width:100%;">
+        </div>
+
+        <div class="pid_input">
+            <h3>Pitch PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="ppmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ppValue'>P Value: </label><span id="pp_value_text">25</span></div>
+                <input type="number" id="ppmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='ppValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="pimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='piValue'>I Value: </label><span id="pi_value_text">0.5</span></div>
+                <input type="number" id="pimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0.5' step="0.000001" class='slider' id='piValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="pdmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='pdValue'>D Value: </label><span id="pd_value_text">25</span></div>
+                <input type="number" id="pdmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='pdValue'
+                onInput="send_pids();" style="width:100%;">
+        </div>
+
+        <div class="pid_input">
+            <h3>Yaw PIDs</h3>
+            <div class="min_max">
+                <input type="number" id="ypmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ypValue'>P Value: </label><span id="yp_value_text">25</span></div>
+                <input type="number" id="ypmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='ypValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="yimin" value="0" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='yiValue'>I Value: </label><span id="yi_value_text">0.5</span></div>
+                <input type="number" id="yimax" value="1" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='0' max='1' value='0.5' step="0.000001" class='slider' id='yiValue'
+                onInput="send_pids();" style="width:100%;">
+        
+            <div class="min_max">
+                <input type="number" id="ydmin" value="20" class="mins"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+                <div><label for='ydValue'>D Value: </label><span id="yd_value_text">25</span></div>
+                <input type="number" id="ydmax" value="30" class="maxs"
+                    onchange="console.log('changed min max values'); changeMinMax();">
+            </div>
+            <input type='range' min='20' max='30' value='25' step="0.01" class='slider' id='ydValue'
+                onInput="send_pids();" style="width:100%;">
+        </div>
+
+        <button onclick="send_pids(1);">Save PID values</button>
+    </div>
+
+</body>
+
+<script>
+    // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+// // 
+// // // pid related things
+// //
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+function changeMinMax() {
+        // roll value
+        const r_pvalueDiv = document.getElementById("rpValue");
+        const r_ivalueDiv = document.getElementById("riValue");
+        const r_dvalueDiv = document.getElementById("rdValue");
+
+        r_pvalueDiv.max = document.getElementById("rpmax").value;
+        r_pvalueDiv.min = document.getElementById("rpmin").value;
+        r_ivalueDiv.max = document.getElementById("rimax").value;
+        r_ivalueDiv.min = document.getElementById("rimin").value;
+        r_dvalueDiv.max = document.getElementById("rdmax").value;
+        r_dvalueDiv.min = document.getElementById("rdmin").value;
+
+        // pitch values
+        const p_pvalueDiv = document.getElementById("ppValue");
+        const p_ivalueDiv = document.getElementById("piValue");
+        const p_dvalueDiv = document.getElementById("pdValue");
+
+        p_pvalueDiv.min = document.getElementById("ppmin").value;
+        p_pvalueDiv.max = document.getElementById("ppmax").value;
+        p_ivalueDiv.max = document.getElementById("pimax").value;
+        p_ivalueDiv.min = document.getElementById("pimin").value;
+        p_dvalueDiv.max = document.getElementById("pdmax").value;
+        p_dvalueDiv.min = document.getElementById("pdmin").value;
+
+        // yaw values
+        const y_pvalueDiv = document.getElementById("ypValue");
+        const y_ivalueDiv = document.getElementById("yiValue");
+        const y_dvalueDiv = document.getElementById("ydValue");
+
+        y_pvalueDiv.max = document.getElementById("ypmax").value;
+        y_pvalueDiv.min = document.getElementById("ypmin").value;
+        y_ivalueDiv.max = document.getElementById("yimax").value;
+        y_ivalueDiv.min = document.getElementById("yimin").value;
+        y_dvalueDiv.max = document.getElementById("ydmax").value;
+        y_dvalueDiv.min = document.getElementById("ydmin").value;
+    }
+
+    function update_pids(r_pValue, r_iValue, r_dValue, p_pValue, p_iValue, p_dValue, y_pValue, y_iValue, y_dValue){
+        document.getElementById('rp_value_text').innerText = r_pValue;
+        document.getElementById('ri_value_text').innerText = r_iValue;
+        document.getElementById('rd_value_text').innerText = r_dValue;
+        document.getElementById('pp_value_text').innerText = p_pValue;
+        document.getElementById('pi_value_text').innerText = p_iValue;
+        document.getElementById('pd_value_text').innerText = p_dValue;
+        document.getElementById('yp_value_text').innerText = y_pValue;
+        document.getElementById('yi_value_text').innerText = y_iValue;
+        document.getElementById('yd_value_text').innerText = y_dValue;  
+    }
+
+    function send_pids(save_or_not) {
+        // roll values
+        const r_pValue = parseFloat(document.getElementById('rpValue').value) || 0;
+        const r_iValue = parseFloat(document.getElementById('riValue').value) || 0;
+        const r_dValue = parseFloat(document.getElementById('rdValue').value) || 0;
+        const p_pValue = parseFloat(document.getElementById('ppValue').value) || 0;
+        const p_iValue = parseFloat(document.getElementById('piValue').value) || 0;
+        const p_dValue = parseFloat(document.getElementById('pdValue').value) || 0; 
+        const y_pValue = parseFloat(document.getElementById('ypValue').value) || 0;
+        const y_iValue = parseFloat(document.getElementById('yiValue').value) || 0;
+        const y_dValue = parseFloat(document.getElementById('ydValue').value) || 0;
+
+        document.getElementById('rp_value_text').innerText = r_pValue;
+        document.getElementById('ri_value_text').innerText = r_iValue;
+        document.getElementById('rd_value_text').innerText = r_dValue;
+        document.getElementById('pp_value_text').innerText = p_pValue;
+        document.getElementById('pi_value_text').innerText = p_iValue;
+        document.getElementById('pd_value_text').innerText = p_dValue;
+        document.getElementById('yp_value_text').innerText = y_pValue;
+        document.getElementById('yi_value_text').innerText = y_iValue;
+        document.getElementById('yd_value_text').innerText = y_dValue;
+
+
+        if (save_or_not === 1){
+            console.log('saving the PID values');
+            alert('saving the PID values');
+        }
+        
+        const pidValues = {
+            id: 2,
+            save: save_or_not,
+            proll: r_pValue,
+            iroll: r_iValue,
+            droll: r_dValue,
+            ppitch: p_pValue,
+            ipitch: p_iValue,
+            dpitch: p_dValue,
+            pyaw: y_pValue,
+            iyaw: y_iValue,
+            dyaw: y_dValue,
+          };
+
+        handleMessage(JSON.stringify(pidValues));
+    }
+
+</script>
+
+</html>

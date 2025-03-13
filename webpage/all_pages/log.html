@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Data Plot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /*  */
+/* start Global Styles */
+/*  */
+* {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', Arial, sans-serif;
+    scroll-behavior: smooth;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Content Blocks */
+.blocks {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+    padding: 0px;
+    margin: 10px 0px;
+    padding: 10px 5px;
+    width: 95%;
+    max-width: 900px;
+    text-align: center;
+    animation: fadeIn 0.6s ease-in-out;
+    display: none;
+    flex-direction: column;
+}
+
+/* end Global Styles */
+#log{
+    display: flex;
+}
+input[type=number]{
+    width: 40px;
+    border: none;
+    text-align: end;
+}
+
+.active_option{
+    font-weight: bold;
+    color: blueviolet;
+}
+
+#view_selection {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background: #ffffff;
+    padding: 5px;
+    /* margin-bottom: 5px; */
+    font-size: 16px;
+    font-weight: 500;
+}
+
+#view_selection span {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#view_selection span:hover {
+    background: #f0f0f0;
+}
+
+#view_selection .active_option {
+    font-weight: bold;
+    color: #673ab7;
+    background: #e1d5f7;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+
+.view_option{
+    margin: 5px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+#inputSection{
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    padding: 5px;
+}
+
+#storeBtn{
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+    align-items: center;
+    gap: 10px;
+}
+
+#storeBtn button{
+    font-weight: bold;
+    color: #673ab7;
+    background: #e1d5f7;
+    border-radius: 10px;
+    padding: 6px 15px;
+    border: 1px solid rgb(196, 187, 187); 
+}
+
+#storeBtn label {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    }
+
+#storeBtn input {
+    width: 100%;
+}
+
+#loadSection{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#loadSection button{
+    padding: 5px 20px;
+    border-radius: 10px;
+    border: 1px solid rgb(196, 187, 187); 
+    color: #673ab7;
+}
+
+#dataSets{
+    width: 100%;
+    padding-left: 15px;
+    border-radius: 10px;
+    border: 1px solid rgb(196, 187, 187); 
+}
+
+#dataSetName{
+    padding: 5px 20px; 
+    border-radius: 10px;
+    border: 1px solid rgb(196, 187, 187); 
+}
+
+#graph{
+    border: 1px solid rgb(196, 187, 187); 
+    padding: 5px; 
+    margin: 5px 10px;
+    border-radius: 16px;
+} 
+
+
+#storeBtn button:hover, #loadSection button:hover {
+            background: #cdb3f6;
+        }
+
+@media screen and (max-width: 500px) {
+    *{
+        font-size: 14px;
+    }
+    
+    input[type=number]{
+        width: 30px;
+        border: none;
+        font-size: 14px;
+    }
+
+    #storeBtn{
+        width: 100%;
+        flex-direction: column;
+    }
+    #storeBtn label{
+        padding: 8px;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    #storeBtn button{
+        width: 100%;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="blocks" id="log">
+        <div id="view_selection">
+            <span class="active_option" id="store" onclick="show_store_data();">Store Data</span>
+            |
+            <span id="load" onclick="show_load_data();">Load Data</span>
+        </div>    
+
+        <div class="view_option" id="saveSection" style="display: flex;">
+            <div id="inputSection">
+                <label for="roll">Roll: <input type="number" id="roll" value = "360" onchange="add_data()"></label>
+                <label for="pitch">Pitch: <input type="number" id="pitch" value = "9" onchange="add_data()"></label>
+                <label for="yaw">Yaw: <input type="number" id="yaw" value = "9" onchange="add_data()"></label>
+                <label for="altitude">Altitude: <input type="number" id="altitude" value = "9" onchange="add_data()"></label>
+            </div>
+            <div id="storeBtn">
+                <label for="dataSetName"><input type="text" id="dataSetName" placeholder="Enter record name"></label>
+                <button onclick="storeData()">Store</button>
+            </div>
+        </div>
+        
+        <div class="view_option" id="loadSection" style="display: none;">
+            <select id="dataSets"></select>
+            <button onclick="loadData()">Load</button>
+            <button onclick="deleteData()">Delete</button>
+        </div>
+        
+        <div id="graph">
+            <label for="bufferSize">Buffer Size:</label>
+            <input type="number" id="bufferSize" value="50" step="1" min="1" onchange="maxPoints = parseInt(this.value) || 50;">
+            <canvas id="rpyChart"></canvas>
+        </div>
+    </div>
+    
+    <script>
+        function show_store_data(){
+            document.getElementById("store").classList.add('active_option');
+            document.getElementById("load").classList.remove('active_option');
+
+            document.getElementById("saveSection").style.display = "flex";
+            document.getElementById("loadSection").style.display = "none";
+        }
+
+        function show_load_data(){
+            document.getElementById("store").classList.remove('active_option');
+            document.getElementById("load").classList.add('active_option');
+
+            document.getElementById("saveSection").style.display = "none";
+            document.getElementById("loadSection").style.display = "flex";
+            
+            const select = document.getElementById('dataSets');
+            select.innerHTML = '';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = key;
+                select.appendChild(option);
+            }
+        }
+
+
+        let rollData = [], pitchData = [], yawData = [], altitudeData = [], labels = [];
+        let index = 0;
+        let maxPoints = 50;
+        
+        const ctx = document.getElementById('rpyChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Roll', borderColor: 'red', data: rollData, fill: false },
+                    { label: 'Pitch', borderColor: 'green', data: pitchData, fill: false },
+                    { label: 'Yaw', borderColor: 'blue', data: yawData, fill: false },
+                    { label: 'Altitude', borderColor: 'purple', data: altitudeData, fill: false }
+                ]
+            },
+            options: { responsive: true }
+        });
+        
+        
+        function add_data(){
+            const roll = parseFloat(document.getElementById('roll').value) || 0;
+            const pitch = parseFloat(document.getElementById('pitch').value) || 0;
+            const yaw = parseFloat(document.getElementById('yaw').value) || 0;
+            const altitude = parseFloat(document.getElementById('altitude').value) || 0;
+            
+            rollData.push(roll);
+            pitchData.push(pitch);
+            yawData.push(yaw);
+            altitudeData.push(altitude);
+            labels.push(index++);
+            updatePlot();
+        }
+        
+        function updatePlot() {
+            if (rollData.length > maxPoints) {
+                rollData.shift();
+                pitchData.shift();
+                yawData.shift();
+                altitudeData.shift();
+                labels.shift();
+            }
+            
+            chart.update();
+        }
+        
+        function storeData() {
+            const name = document.getElementById('dataSetName').value.trim();
+            if (!name) {
+                alert('Please enter a dataset name.');
+                return;
+            }
+            const data = { rollData, pitchData, yawData, altitudeData, labels, index };
+            localStorage.setItem(name, JSON.stringify(data));
+            alert(`Data stored as "${name}"!`);
+            
+            rollData = []; pitchData = []; yawData = []; altitudeData = []; labels = []; index = 0;
+            chart.data.labels = labels;
+            chart.data.datasets.forEach(dataset => dataset.data = []);
+            chart.update();
+        }
+        
+        function loadData() {
+            const name = document.getElementById('dataSets').value;
+            const storedData = JSON.parse(localStorage.getItem(name));
+            if (storedData) {
+                rollData = storedData.rollData;
+                pitchData = storedData.pitchData;
+                yawData = storedData.yawData;
+                altitudeData = storedData.altitudeData;
+                labels = storedData.labels;
+                index = storedData.index;
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = rollData;
+                chart.data.datasets[1].data = pitchData;
+                chart.data.datasets[2].data = yawData;
+                chart.data.datasets[3].data = altitudeData;
+                chart.update();
+            } else {
+                alert('No data found for the given name.');
+            }
+        }
+
+        function deleteData() {
+            const name = document.getElementById('dataSets').value;
+
+            if (!name) {
+                alert("Please enter a dataset name to delete.");
+                return;
+            }
+
+            if (localStorage.getItem(name)) {
+                const confirmDelete = confirm(`Are you sure you want to delete the dataset "${name}"?`);
+                
+                if (confirmDelete) {
+                    localStorage.removeItem(name); // Remove the stored data from localStorage
+                    alert(`Data set "${name}" has been deleted.`);
+
+                    // Optionally, clear the chart after deletion
+                    chart.data.labels = [];
+                    chart.data.datasets.forEach(dataset => dataset.data = []);
+                    chart.update();
+                    const select = document.getElementById('dataSets');
+                    
+                    select.innerHTML = '';
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = key;
+                        select.appendChild(option);
+                    }
+                }
+            } else {
+                alert('No data found for the given name.');
+            }
+        }
+
+    </script>
+</body>
+</html>

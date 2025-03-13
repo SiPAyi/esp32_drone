@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone</title>
+    <!-- <style>
+        /* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', Arial, sans-serif;
+    scroll-behavior: smooth;
+    box-sizing: border-box;
+}
+
+
+body {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Content Blocks */
+.blocks {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin-top: 5px;
+    width: 90%;
+    max-width: 900px;
+    text-align: center;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+/* nav */
+#nav {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background: linear-gradient(135deg, #90a4ae, #607d8b);
+    padding: 10px 0px 0px 0px;
+}
+
+
+#nav h1 {
+    text-align: center;
+    padding: 10px 0;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Connection Status */
+#connection_status_div {
+    width: 100%;
+    text-align: center;
+    padding: 0px;
+    font-weight: bold;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#connection_status {
+    color: #1a237e;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 0.9rem;
+}
+
+/* IP Address Section */
+#ip_address {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 5px;
+    font-size: 1rem;
+}
+
+#ip_address_span {
+    background: #ffffff;
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    border-radius: 5px;
+    min-width: 100px;
+    display: inline-block;
+    text-align: center;
+}
+
+#change_ip {
+    padding: 6px 12px;
+    background: #4caf50;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+#change_ip:hover {
+    background: #388e3c;
+}
+
+
+/* Tabs Navigation */
+#tabs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 0px;
+    width: 100%;
+    background: white;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tab {
+    padding: 8px 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: 0.3s;
+}
+
+.tab:hover {
+    color: #d32f2f;
+}
+
+.tab[style*="color: red"] {
+    border-bottom: 3px solid #d32f2f;
+}
+
+/* for starting */
+.blocks{
+    display: none;
+}
+#drone_info{
+    display: flex;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media screen and (max-width: 500px) {
+    #tabs{
+        font-size: 12px;
+        gap: 0px;
+    }
+}
+    </style> -->
+
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+    <div id="nav">
+        <div id="connection_status_div">
+            <span id="connection_status"> Not Connected</span>
+            <h1>Drone</h1>
+            <div id="ip_address">
+                    <span>IP address:<span contenteditable="true" id="ip_address_span"> </span></span>
+                    <span id="change_ip" onclick="console.log('changed ip'); changeIp();">change</span>
+            </div>
+        </div>
+
+            <div id="tabs">
+                <div class="tab" id="drone_info_tab"onclick="show_or_hide_block('drone_info'); ">Home</div>
+                <div class="tab" id="calibration_tab" onclick="show_or_hide_block('calibration');">Calib</div>
+                <div class="tab" id="pid_inputs_tab" onclick="show_or_hide_block('pid_inputs');">PID</div>
+                <div class="tab" id="joy_tab" onclick="show_or_hide_block('joy');">Joy</div>
+                <div class="tab" id="log_tab" onclick="show_or_hide_block('log');">Log</div>
+                <div class="tab" id="settings_tab" onclick="show_or_hide_block('settings');">Settings</div>
+            </div>
+    </div>
+
+    <div class="blocks" id="drone_info">this is drone_info </div>
+    <div class="blocks" id="calibration">this is calibration </div>
+    <div class="blocks" id="pid_inputs">this is pid_inputs </div>
+    <div class="blocks" id="joy">this is joy </div>
+    <div class="blocks" id="settings">this is settings </div>
+    <div class="blocks" id="log">this is log </div>
+
+    <script>
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+// // 
+// // // navbar related things
+// //
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+function show_or_hide_block(div_id) {
+    // Get all the divs in an array
+    const divs = ['drone_info', 'calibration', 'pid_inputs', 'joy', 'settings', "log"];
+
+    // Loop through each div and hide it
+    divs.forEach(id => {
+        const element = document.getElementById(id);
+        element.style.display = 'none';
+
+        const element_tab = document.getElementById(id+"_tab");
+        element_tab.style.fontWeight = 'normal';
+        element_tab.style.color = 'black';
+    });
+
+    // Display the clicked div
+    const selectedDiv = document.getElementById(div_id);
+    selectedDiv.style.display = 'flex';
+
+    const selectedDivTab = document.getElementById(div_id+"_tab");
+    selectedDivTab.style.fontWeight = 'bold';
+    selectedDivTab.style.color = 'red';
+
+}
+
+let ip_address = "192.168.164.42";
+const ipDiv = document.getElementById("ip_address_span");
+const conn_status_div = document.getElementById("connection_status");
+ipDiv.innerText = ip_address;
+
+function changeIp() {
+    ip_address = ipDiv.innerText;
+    alert("IP Address changed to" + ip_address);
+    ws.close();
+    connectWebSocket();
+}
+
+
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+// //
+// // // websocket related things
+// //
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+
+let ws, prev_status = 0;
+function connectWebSocket() {
+    ws = new WebSocket("ws://" + ip_address + ":81/");
+    console.log("connecting to the websocket with address ws://" + ip_address + ":81/" + " type of ip_address " + typeof (ip_address))
+
+    ws.onopen = function (event) {
+        console.log("Connected to WebSocket server");
+        conn_status_div.innerText = "Connected";
+        conn_status_div.style.color = "Green";
+        prev_status = 1;
+    };
+
+    ws.onmessage = function (event) {
+        console.log("Server response: " + event.data);
+        handleMessage(event.data);
+    };
+    
+    ws.onerror = function (event) {
+        console.error("WebSocket error observed:", event);
+        // Attempt to reconnect after a short delay
+        setTimeout(connectWebSocket, 2000);
+        if (prev_status) {
+            conn_status_div.innerText = "disconnected";
+            conn_status_div.style.color = "red";
+        } else {
+            conn_status_div.innerText = "Not Connected";
+            conn_status_div.style.color = "blue";
+        }
+    };
+
+    ws.onclose = function (event) {
+        console.error("WebSocket is closed:", event);
+        conn_status_div.innerText = "disconnected";
+        conn_status_div.style.color = "red";
+    };
+}
+
+
+function send_data(msg){
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(msg);
+        console.log("sent mesage: ", msg);
+    } else {
+        console.error("WebSocket connection is not open.");
+        if (prev_status) {
+            conn_status_div.innerText = "disconnected";
+            conn_status_div.style.color = "red";
+        } else {
+            conn_status_div.innerText = "Not Connected";
+            conn_status_div.style.color = "blue";
+        }
+    }
+}
+
+// Function to parse incoming messages
+function handleMessage(message) {
+    try {
+        const data = JSON.parse(message);
+        const messageId = data.message_id;
+
+        // Handle message based on message_id
+        switch (messageId) {
+            case 0: // 0(drone<-GCS): modes(0->standby, 1->motor_calib, 2->imu_calib, 3->guided, 4-> auto)
+                console.log("this step is only on drone side (drone<-GCS)");
+                break;
+            case 1: // 1(drone<>GCS): get_PIDs
+                console.log("sending PID values");
+                send_data(msg);
+            case 2: // 2(drone<>GCS): set_PIDs{save, proll, iroll, droll, ppitch, ipitch, dpitch, pyaw, iyaw, dyaw}
+                console.log("updating the PID values");
+                update_pids(msg.proll, msg.iroll, msg.droll, msg.ppitch, msg.ipitch, msg.dpitch, msg.pyaw, msg.iyaw, msg.dyaw)
+                break;
+            case 3: // 3(drone<>GCS): get_motors_order
+                break;
+            case 4: // 4(drone<-GCS): set_motors_order{top_left, top_right, bottom_left, bottom_right}
+                break;
+            case 5: // 5(drone<-GCS): motor_calib{m1_state, m2_state, m3_state, m4_state, m1_speed, m2_speed, m3_speed, m4_speed}
+                break;
+            case 6: // 6(drone<>GCS): get_settings
+                break;
+            case 7: // 7(drone<>GCS): set_settings{max_roll, max_pitch, max_yaw, min_speed, max_speed}
+                break;
+            case 8: // 8(drone<-GCS): imu_calib_command{step}
+                break;
+            case 9: // 9(drone->GCS): imu_calib_response{step, response}
+                break;
+            case 10: // 10(drone<-GCS): get_orientation
+                break;
+            case 11: // 11(drone->GCS): drone_orientation{roll, pitch, yaw}
+                break;
+            case 12: // 12(drone<-GCS): setpoints{roll, pitch, yaw}
+                break;
+            default:
+                console.log(`Unknown Message ID: ${messageId}`);
+        }
+    } catch (err) {
+        parsedData.textContent = `Error parsing message: ${err}`;
+    }
+}
+
+// // Connect WebSocket when the page loads
+// window.onload = function () {
+//     connectWebSocket();
+// };
+
+    </script>
+</body>
+
+</html>

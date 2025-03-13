@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibration Process</title>
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"> -->
+<style>
+    /* start of global division */
+    * {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', Arial, sans-serif; /* Use a clean, modern font */
+    scroll-behavior: smooth;
+}
+
+body {
+    background: linear-gradient(135deg, #f0f4ff, #d9e8fc);
+    color: #333;
+    min-height: 100vh;
+    padding: 0px;
+    margin: 0px;
+}
+
+/* Content Blocks */
+.blocks {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin-top: 5px;
+    width: 90%;
+    max-width: 900px;
+    /* min-height: 100vh; */
+    text-align: center;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+    /* end of global division */
+
+#calibration {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 900px;
+    margin: 0px auto;
+    margin: 0 auto;
+}
+
+#calibration h1 {
+    text-align: center;
+    font-size: 2.2em;
+    margin: 20px 0;
+    font-weight: 700;
+    color: #0056b3;
+}
+
+#calibration #calibration_div {
+    width: 100%;
+    max-width: 900px;
+    margin: 0px auto;
+}
+
+#calibration #offsets_block {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+    padding: 10px;
+    margin: 20px;
+}
+
+#calibration #offsets_block h3 {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+#calibration #offsets {
+    line-height: 1.5;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+#calibration #offsets div{
+    width: 100px;
+    text-align: center;
+    display: flex;
+}
+
+#calibration #calib_list {
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+    max-width: 900px;
+    margin: 0px auto;
+    margin-bottom: 30px;
+}
+
+#calibration #calib_list h3 {
+    font-weight: 600;
+    color: #007BFF;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, font-weight 0.3s ease;
+}
+
+#calibration #calib_list h3.active {
+    background-color: #007BFF;
+    color: white;
+    font-weight: 700;
+}
+
+#calibration #calib_list h3:hover {
+    background-color: #f1f1f1;
+}
+
+#calibration #calib {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 0px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+    margin: 0px auto;
+    display: none;
+}
+
+#calibration #step-container {
+    text-align: center;
+}
+
+#calibration #step-number {
+    font-weight: 700;
+    color: #007BFF;
+    margin-bottom: 15px;
+}
+
+#calibration #step-description {
+    line-height: 1.6;
+    margin: 15px 0;
+    color: #333;
+}
+
+#calibration #step-visual {
+    margin: 10px auto;
+    width: min(500px, 100%);
+}
+
+#calibration #step-visual img, #calibration #step-visual video{
+    width: 100%;
+}
+
+#calibration .progress-bar-container {
+    width: 100%;
+    background-color: #ddd;
+    height: 10px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+#calibration .progress-bar {
+    height: 100%;
+    width: 0;
+    background-color: #007BFF;
+    border-radius: 10px;
+}
+
+#calibration #buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+#calibration button {
+    padding: 12px 24px;
+    font-weight: 500;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#calibration button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+#calibration button:disabled {
+    background-color: #ddd;
+    cursor: not-allowed;
+}
+
+#calibration #resetBtn {
+    background-color: #dc3545;
+}
+
+#calibration #resetBtn:hover {
+    background-color: #c82333;
+}
+
+@media (max-width: 768px) {
+    #calibration button {
+        width: 100%;
+        margin: 5px;
+        padding: 14px;
+    }
+
+    #calibration #step-description {
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 480px) {
+    #calibration h1 {
+        font-size: 1.8em;
+    }
+
+    #calibration #offsets_block h3 {
+        font-size: 1.2em;
+    }
+
+    #calibration #step-number {
+        font-size: 1.2em;
+    }
+
+    #calibration button {
+        padding: 5px;
+        font-size: 1em;
+    }
+}
+
+</style>
+</head>
+<body>
+
+<div class="blocks" id="calibration">
+    <div id="calibration_div">
+        <div class="offset_values" id="offsets_block">
+            <h3>IMU Offsets:</h3>
+            <div id="offsets">
+                <div>Roll: <span id="roll_offset">360</span></div>
+                <div>Pitch: <span id="pitch_offset">360</span></div>
+                <div>Yaw: <span id="yaw_offset">360</span></div>
+                <div>acc_x: <span id="acc_x_offset">360</span></div>
+                <div>acc_y: <span id="acc_y_offset">360</span></div>
+                <div>acc_z: <span id="acc_z_offset">360</span></div>
+            </div>
+        </div>
+
+        <div id="calib_list">
+            <h3 id="imu_calib" href="#calib">IMU Calibration</h3>
+            <h3 id="esc_calib" href="#calib">ESC Calibration</h3>
+        </div>
+
+        <div class="calib" id="calib">
+            <div id="step-container" class="step-content">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div id="step-number"></div>
+                <div id="step-visual"></div>
+                <div id="step-description">Let's start the calibration :)</div>
+                <div id="buttons">
+                    <button id="calibrateBtn">Start</button>
+                    <button id="prevBtn" style="display:none;">Previous Step</button>
+                    <button id="nextBtn" style="display:none;">Next Step</button>
+                    <button id="resetBtn" style="display:none;">Reset</button>
+                </div>
+            </div>        
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+
+    <script>
+        const esc_calib_steps = [
+            { description: "Send maximum throttle signal to ESC.", visual: 'calibration_visuals/max_throttle.jpg', visual_type: 'image' },
+            { description: "Connect the battery to the ESC.", visual: 'calibration_visuals/connect_battery.jpg', visual_type: 'image' },
+            { description: "Send minimum throttle signal to finalize the calibration.", visual: 'calibration_visuals/min_throttle.jpg', visual_type: 'image' },
+            { description: "Calibration complete! The ESC is ready for use.", visual: 'calibration_visuals/calib_complete.jpg', visual_type: 'image' }
+        ];
+        
+        const imu_calib_steps = [
+            { description: 'Place the drone on the flat surface.', visual: 'calibration_visuals/flat_on_a_surface.png', visual_type: 'image' },
+            { description: 'Place the drone on its back (i.e., pitch 90 degrees).', visual: 'calibration_visuals/on_backside.png', visual_type: 'image' },
+            { description: 'Place the drone on the left/right side (i.e., roll 90 degrees).', visual: 'calibration_visuals/on_left_or_right_side.png', visual_type: 'image' },
+            { description: 'Place the drone on the flat surface again.', visual: 'calibration_visuals/flat_on_a_surface.png', visual_type: 'image' },
+            { description: `<b>Roll (X-axis)</b><br>The drone tilts to the left or right. <br>Think of the drone tipping over its sides.`, visual: 'calibration_visuals/roll.webm', visual_type: 'video' },
+            { description: `<b>Pitch (Y-axis)</b><br>The nose of the drone tilts up or down. <br> Imagine the drone pivoting forward or backward, like nodding your head.`, visual: 'calibration_visuals/pitch.webm', visual_type: 'video' },
+            { description: `<b>Yaw (Z-axis)</b><br>The drone rotates left or right while staying level. <br>It's like spinning around a vertical axis.`, visual: 'calibration_visuals/yaw.webm', visual_type: 'video' },
+            { description: "IMU calibration is completed!", visual: 'calibration_visuals/calib_complete.jpg', visual_type: 'image' }
+        ];
+
+        let currentStep = 0;
+        let currentCalibration = null;
+
+        // JavaScript logic to handle active step highlighting
+        const imuCalibBtn = document.getElementById('imu_calib');
+        const escCalibBtn = document.getElementById('esc_calib');
+
+        // Update the progress bar
+        const progressBar = document.getElementById('progressBar');
+
+
+        imuCalibBtn.addEventListener('click', () => {
+            currentCalibration = imu_calib_steps;
+            showCalibrationStep("IMU");
+
+            imuCalibBtn.classList.add('active');
+            escCalibBtn.classList.remove('active');
+        });
+
+        escCalibBtn.addEventListener('click', () => {
+            currentCalibration = esc_calib_steps;
+            showCalibrationStep("ESC");
+
+            escCalibBtn.classList.add('active');
+            imuCalibBtn.classList.remove('active');
+        });
+
+
+        function showCalibrationStep(calib_items) {
+            document.getElementById('calib').style.display = 'block';
+            document.getElementById('calibrateBtn').style.display = 'block';
+            document.getElementById('prevBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('resetBtn').style.display = 'none';
+            document.getElementById('step-description').innerHTML = "Let's start the " + calib_items + " calibration :)";
+            document.getElementById('step-visual').innerHTML = `<img src="../calibration_visuals/calib_intro.jpg" alt="Step Visual"/>`; 
+            document.getElementById('step-number').innerHTML = '';
+            
+            // Reset the current step
+            currentStep = 0;
+        }
+
+        // Start button logic
+        document.getElementById('calibrateBtn').addEventListener('click', function() {
+            showStep(currentStep);
+            document.getElementById('calibrateBtn').style.display = 'none';
+            document.getElementById('prevBtn').style.display = 'inline-block';
+            document.getElementById('nextBtn').style.display = 'inline-block';
+            document.getElementById('resetBtn').style.display = 'inline-block';
+        });
+
+        // Previous button logic
+        document.getElementById('prevBtn').addEventListener('click', function() {
+            if (currentStep > 0) {
+                currentStep--;
+                showStep(currentStep);
+            }
+            
+            // Re-enable the 'Next' button when moving back from the last step
+            if (currentStep < currentCalibration.length - 1) {
+                document.getElementById('nextBtn').disabled = false;
+            }   
+
+            // Enable the 'Previous' button at the beginning (if needed)
+            if (currentStep > 0) {
+                document.getElementById('prevBtn').disabled = false;
+            }
+        });
+
+        // Next button logic
+        document.getElementById('nextBtn').addEventListener('click', function(event) {
+            if (currentStep < currentCalibration.length - 1) {
+                currentStep++;
+                showStep(currentStep);
+            }
+
+            // Disable the 'Next' button on the last step
+            if (currentStep === currentCalibration.length - 1) {
+                document.getElementById('nextBtn').disabled = true;
+            }
+
+            // Re-enable the 'Previous' button if not on the first step
+            if (currentStep > 0) {
+                document.getElementById('prevBtn').disabled = false;
+            }
+        });
+
+
+
+        // Reset button logic
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('nextBtn').disabled = false;
+            document.getElementById('prevBtn').disabled = false;
+            currentStep = 0;
+            showStep(currentStep);
+        });
+
+        function showStep(stepIndex) {
+            const step = currentCalibration[stepIndex];
+            document.getElementById('step-description').innerHTML = step.description;
+            document.getElementById('step-number').innerHTML = `Step ${stepIndex + 1}`;
+            if (step.visual_type === 'image') {
+                document.getElementById('step-visual').innerHTML = `<img src="../${step.visual}" alt="Step Visual" width="300" />`;
+            } else if (step.visual_type === 'video') {
+                document.getElementById('step-visual').innerHTML = `<video autoplay loop><source src="../${step.visual}" type="video/webm"></video>`;
+            }
+            // Update the progress bar
+            progressBar.style.width = (currentStep + 1) / currentCalibration.length * 100 + '%';
+        }
+    </script>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone</title>
+
+    <style>
+    /* start of global division */
+* {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', Arial, sans-serif; /* Use a clean, modern font */
+    scroll-behavior: smooth;
+}
+
+body {
+    background: linear-gradient(135deg, #f0f4ff, #d9e8fc);
+    color: #333;
+    min-height: 100vh;
+    padding: 0px;
+    margin: 0px;
+}
+    /* end of drone bomma division */
+
+    /* start of drone bomma division */
+    #drone_container{
+        align-items: center;
+        padding: 5px;
+        margin: 5px 0px;
+        min-width: 250px;
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+
+    #drone_display {
+        width: 200px;
+        aspect-ratio: 1/1;
+        perspective: 1000px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 5px;
+    }
+
+    #drone {
+        position: relative;
+        width: 50px;
+        aspect-ratio: 1/1;
+        background: linear-gradient(to bottom, #007bff, #0056b3);
+        transform-style: preserve-3d;
+        transform-origin: center;
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+        transition: transform 0.1s ease-in-out;
+    }
+
+    /* Front indicator for the drone */
+    #front {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 20px;
+        background-color: red;
+        clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    }
+
+    /* Propellers of the drone */
+    .propeller {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: gray;
+        border-radius: 50%;
+        padding: 5px;
+    }
+
+    .propeller.top-left {
+        top: -50px;
+        left: -50px;
+    }
+
+    .propeller.top-right {
+        top: -50px;
+        right: -50px;
+    }
+
+    .propeller.bottom-left {
+        bottom: -50px;
+        left: -50px;
+    }
+
+    .propeller.bottom-right {
+        bottom: -50px;
+        right: -50px;
+    }
+
+    /* Arms connecting the body and the propellers */
+    .arm {
+        position: absolute;
+        width: 65px;
+        height: 10px;
+        background-color: black;
+    }
+    
+    .arm.selected {
+        background: #19dd23; /* Selected color */
+    }
+
+    .arm.top-left {
+        top: -25px;
+        left: -50px;
+        transform: rotate(45deg);
+        transform-origin: center;
+    }
+
+    .arm.top-right {
+        top: -25px;
+        right: -50px;
+        transform: rotate(-45deg);
+        transform-origin: center;
+    }
+
+    .arm.bottom-left {
+        bottom: -25px;
+        left: -50px;
+        transform: rotate(-45deg);
+        transform-origin: center;
+    }
+
+    .arm.bottom-right {
+        bottom: -25px;
+        right: -50px;
+        transform: rotate(45deg);
+        transform-origin: center;
+    }
+
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 300px;
+    }
+
+    #drone_orientation{
+        margin: 5px 0px;
+        min-width: 250px;
+        height: auto;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    #drone_container .slider-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    #drone_container .slider-container span{
+        width: 35px;
+    }
+
+    input[type="range"] {
+        width: 200px;
+    }
+
+    #propellerModal{
+        display: none; 
+        position: fixed; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        background: white; 
+        border: 2px solid #007bff; 
+        border-radius: 8px; 
+        padding: 20px; 
+        z-index: 1000;
+    }
+    #overlay{
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0, 0, 0, 0.5); 
+        z-index: 999;
+    }
+/* end of drone bomma division */
+    </style>
+</head>
+
+<body>
+    <div class="blocks" id="drone_info">
+        <div id="drone_orientation">
+            <div>Roll: <span id="roll">360</span></div>
+            <div>Pitch: <span id="pitch">360</span></div>
+            <div>Yaw: <span id="yaw">360</span></div>
+        </div>
+
+        <div id="drone_container">
+            <div id="drone_display">
+                <div id="drone">
+                    <div id="front"></div>
+                    <!-- Arms -->
+                    <div class="arm top-left" data-arm="top-left"></div>
+                    <div class="arm top-right" data-arm="top-right"></div>
+                    <div class="arm bottom-left" data-arm="bottom-left"></div>
+                    <div class="arm bottom-right" data-arm="bottom-right"></div>
+                    <!-- Propellers -->
+                    <div class="propeller top-left" data-motor="1">1</div>
+                    <div class="propeller top-right" data-motor="2">2</div>
+                    <div class="propeller bottom-left" data-motor="3">3</div>
+                    <div class="propeller bottom-right" data-motor="4">4</div>
+                </div>
+            </div>
+
+            <!-- Modal for Selecting Propeller Number -->
+            <div id="propellerModal">
+                <h3 style="width: 250px;">Assign Number to Propeller</h3>
+                <div id="modalChoices">
+                    <!-- Choices will be dynamically inserted here -->
+                </div>
+                <button id="confirmChoice" onclick="confirm_selected_choice();" style="margin-top: 10px;">Confirm</button>
+                <button id="cancelChoice" onclick="cancel_selected_choice();" style="margin-top: 10px;">Cancel</button>
+            </div>
+            <div id="overlay">
+            </div>
+
+            <div id="buttons_div">
+                <button id="speed_control" onclick="change_speed_control_state(this);">start motor test</button>
+                <button id="logSelection" onclick="log_selected_motors();">Show selected arms</button>
+            </div>
+
+            <div class="slider-container" id="speed_controller_div" style="display: none;">
+                <div class="value-display" id="speed-display" onclick="reset_speed();">Speed: 100</div>
+                <input id="speed-slider" type="range" min="0" max="100" value="0" step="1">
+            </div>
+        </div>
+    </div>
+
+</body>
+<script src="global.js"></script>
+<script>
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+// // 
+// // // Motors related
+// //
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+
+// for slider to control the motors speed
+    const speedSlider = document.getElementById('speed-slider');
+    const speedDisplay = document.getElementById('speed-display');
+
+    function update_min_max_speeds(){
+        speedSlider.min = speedMin;
+        speedSlider.max = speedMax;
+        speedSlider.value = speedMin;
+        speedDisplay.textContent = `Speed: ${speedMin}`;
+    }
+    update_min_max_speeds();
+
+    function reset_speed(){
+        speedSlider.value=speedMin; 
+        speedDisplay.textContent = `Speed: ${speedMin}`;
+        // need send a min_speed commands to the drone over websocket
+    }
+
+// Event listener for slider input
+    speedSlider.addEventListener('input', () => {
+        sliderValue = parseInt(speedSlider.value)
+        speedDisplay.textContent = `Speed: ${sliderValue}`;
+        // need send the speed value to the drone over websocket
+    });
+
+// for motor speed controlling code
+    let speed_control_state = 0;
+    function change_speed_control_state(this_element) {
+        const speed_controller_block = document.getElementById('speed_controller_div');
+        if (speed_control_state == 1) {
+            speed_controller_block.style.display = 'none';
+            speed_control_state = 0;
+            this_element.innerText = "start motor test";
+            reset_speed();
+        }
+        else if (confirm("Remove the props before doing it. Do you want to continue?")) {
+            speed_controller_block.style.display = 'flex';
+            speed_control_state = 1;
+            this_element.innerText = "stop motor test";
+        } else {
+            // Optional: Do something else if the user clicks "No"
+            alert("Action canceled. Please remove the props first.");
+        }
+    }
+
+
+// Motors selection
+    const motorCalibDiv = document.getElementById("drone_info");
+    const propellers = motorCalibDiv.querySelectorAll(".propeller");
+    const arms = motorCalibDiv.querySelectorAll(".arm");
+
+    const modal = document.getElementById("propellerModal");
+    const overlay = document.getElementById("overlay");
+    const modalChoices = document.getElementById("modalChoices");
+
+    let selectedPropeller = null;
+
+// show the motors and there selection status and there order in ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+function log_selected_motors(){
+    // Get motor numbers in order
+    const motorsInOrder = Array.from(propellers).map(propeller =>
+        Number(propeller.textContent)
+    );
+
+    // Get motor selection status
+    const motorsSelectionStatus = Array.from(arms).map(arm => {
+        return selectedArms.has(arm.dataset.arm) ? 1 : 0;
+    });
+
+    // Prepare the formatted string for the alert
+    const positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    let statusMessage = '';
+
+    positions.forEach((position, index) => {
+        const statusText = motorsSelectionStatus[index] === 1 ? "selected" : "not selected";
+        statusMessage += `${position} \t ESC ${motorsInOrder[index]} \t ${statusText}\n`;
+    });
+
+
+    statusMessage += "NOTE: \n";
+    statusMessage += "1. To select/unselect motor click on the corresponing arm(rectangle)\n";
+    statusMessage += "2. to change the motor number click on the corresponing motor(circle)\n";
+    // Log the results
+    console.log(statusMessage);
+    // Show the alert with the formatted message
+    alert(statusMessage);
+}
+
+
+// Show the modal with available choices
+    propellers.forEach(propeller => {
+        propeller.addEventListener("click", () => {
+            selectedPropeller = propeller;
+            const currentValue = Number(propeller.textContent);
+
+            // Clear old choices
+            modalChoices.innerHTML = "";
+
+            // Generate choices dynamically
+            for (let i = 1; i <= 4; i++) {
+                const choice = document.createElement("div");
+                choice.innerHTML = `
+                    <label>
+                        <input type="radio" name="propellerChoice" value="${i}" ${i === currentValue ? "checked" : ""}>
+                        ${i}
+                    </label>
+                `;
+                modalChoices.appendChild(choice);
+            }
+
+            // Show modal
+            modal.style.display = "block";
+            overlay.style.display = "block";
+        });
+    });
+
+
+// Arms selection logic
+    const selectedArms = new Set();
+
+    document.querySelectorAll('.arm').forEach(arm => {
+        arm.addEventListener('click', () => {
+            const armName = arm.dataset.arm;
+
+            if (selectedArms.has(armName)) {
+                // Deselect the arm
+                selectedArms.delete(armName);
+                arm.classList.remove('selected');
+            } else {
+                // Select the arm
+                selectedArms.add(armName);
+                arm.classList.add('selected');
+            }
+        });
+    });
+
+
+// Function to get selected arms (can be used anywhere)
+    function getSelectedArms() {
+        return Array.from(selectedArms);
+    }
+
+// Confirm selection
+    function confirm_selected_choice(){
+        const selectedValue = document.querySelector('input[name="propellerChoice"]:checked');
+        if (selectedValue) {
+            const currentValue = Number(selectedPropeller.textContent);
+            const newValue = Number(selectedValue.value);
+
+            // Swap numbers if the new value is already assigned
+            if (newValue !== currentValue) {
+                const otherPropeller = Array.from(propellers).find(
+                    prop => Number(prop.textContent) === newValue
+                );
+
+                if (otherPropeller) {
+                    // Swap values
+                    otherPropeller.textContent = currentValue;
+                }
+
+                selectedPropeller.textContent = newValue;
+            }
+
+            // Hide modal
+            modal.style.display = "none";
+            overlay.style.display = "none";
+        } else {
+            alert("Please select a value before confirming.");
+        }
+    }
+
+// Cancel selection
+    function cancel_selected_choice(){
+        // Reset modal state
+        modal.style.display = "none";
+        overlay.style.display = "none";
+        modalChoices.innerHTML = ""; // Clear choices to prevent duplicate elements
+    }
+</script>
+</html>
